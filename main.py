@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from telegram import Update
 from telegram.constants import ParseMode, ChatType, ChatMemberStatus
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ChatMemberHandler, ApplicationHandlerStop
+from telegram.request import HTTPXRequest
 
 from config import TOKEN, OWNER_ID, LOG_CHAT_ID, APPEAL_CHAT_USERNAME, DB_NAME
 import database as db
@@ -918,6 +919,12 @@ async def auto_backup_job(context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     db.init_db()
+
+    request_settings = HTTPXRequest(
+        connect_timeout=20.0,
+        read_timeout=20.0,
+    )
+    
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(MessageHandler(filters.ALL, ignore_old_updates), group=-200)

@@ -184,6 +184,7 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         help_parts.extend([
             "<b>Sudo Commands:</b>",
             "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Issue a global ban.",
+            "• <code>/dgban &lt;reply&gt; &lt;reason&gt;</code> - Issue a global ban and delete message.",
             "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Revoke a global ban.",
             "• <code>/gbanstat &lt;target&gt;</code> - Check user's detailed ban info.",
             "• <code>/stats</code> - View database statistics.",
@@ -307,6 +308,73 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     log_msg += f"<b>Date:</b> <code>{curr_time}</code>\n<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]"
     if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
     # await utils.send_safe_reply(update, context, log_msg)
+
+    await asyncio.sleep(0.5)
+    if old_ban:
+        await utils.send_safe_reply(update, context, f"Done! Gban reason updated.\n<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>")
+    else:
+        await utils.send_safe_reply(update, context, f"Done! Gbanned.")
+
+@bot_command("dgban")
+async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    admin = update.effective_user
+    chat = update.effective_chat
+    if not await db.is_sudo(admin.id): return
+    
+    if not update.message.reply_to_message or update.message.reply_to_message.forum_topic_created:
+        await update.message.reply_text("Who is the target of the command? The stars in the sky?")
+        return
+
+    target_id = update.message.reply_to_message.from_user.id
+    reason = " ".join(context.args) if context.args else None
+
+    if await db.is_sudo(target_id) or target_id == context.bot.id:
+        await update.message.reply_text("LoL, looks like... Someone tried gban privileged user. Nice Try."); return
+    if not reason:
+        await update.message.reply_text("Give a reason!"); return
+        
+    old_ban = await db.get_gban(target_id)
+    if old_ban:
+        old_reason = old_ban[0]
+        if old_reason.strip() == reason.strip():
+            user_link = await utils.create_user_link(target_id, context)
+            await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is already globally banned for the same reason. <b>No changes made.</b>")
+            return
+
+    if chat.type == ChatType.PRIVATE:
+        chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
+    elif chat.username:
+        chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
+        chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
+    else:
+        chat_display = utils.safe_escape(chat.title)
+
+    await utils.send_safe_reply(update, context, f"Ok!")
+
+    try:
+        await update.message.reply_to_message.delete()
+    except:
+        pass
+
+    if chat.type != ChatType.PRIVATE and await db.is_enforced(chat.id):
+        try:
+            await context.bot.ban_chat_member(chat.id, target_id)
+        except Exception as e:
+            logger.warning(f"Could not locally ban {target_id}: {e}")
+
+    await db.add_gban(target_id, admin.id, reason)
+    user_link = await utils.create_user_link(target_id, context)
+    admin_link = await utils.create_user_link(admin.id, context)
+    curr_time = utils.get_utc_now()
+    hashtag = "#GBANUPDATE" if old_ban else "#GBANNED"
+    
+    log_msg = (f"<b>{hashtag}</b>\n"
+               f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
+               f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
+               f"<b>Reason:</b> <code>{utils.safe_escape(reason)}</code>\n")
+    if old_ban: log_msg += f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>\n"
+    log_msg += f"<b>Date:</b> <code>{curr_time}</code>\n<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]"
+    if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
 
     await asyncio.sleep(0.5)
     if old_ban:

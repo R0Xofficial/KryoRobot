@@ -521,6 +521,11 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not target_id: target_id = user.id
     
     ban = await db.get_gban(target_id)
+    
+    if not ban:
+        await utils.send_safe_reply(update, context, f"I don't know who this user is. I've probably never seen him.")
+        return
+    
     u_link = await utils.create_user_link(target_id, context)
     title = "Your Global Ban Status:" if target_id == user.id else "Global Ban Status:"
     if ban:

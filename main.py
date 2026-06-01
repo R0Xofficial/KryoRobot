@@ -536,14 +536,25 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     sudo = await db.is_sudo(user.id)
     target_id = None
+    error_msg = None
+
     if sudo:
         if update.message.reply_to_message and not update.message.reply_to_message.forum_topic_created:
             target_id = update.message.reply_to_message.from_user.id
-        elif context.args: target_id, _ = await utils.resolve_id(update, context, context.args[0])
-    if not target_id: target_id = user.id
+        elif context.args:
+            target_id, error_msg = await utils.resolve_id(update, context, context.args[0])
+
+    if error_msg:
+        await utils.send_safe_reply(update, context, error_msg)
+        return
+
+    if not target_id:
+        target_id = user.id
+        checking_self = True
+    else:
+        checking_self = (target_id == user.id)
     
     ban = await db.get_gban(target_id)
-    
     u_link = await utils.create_user_link(target_id, context)
     title = "Your Global Ban Status:" if target_id == user.id else "Global Ban Status:"
     if ban:

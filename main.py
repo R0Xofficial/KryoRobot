@@ -545,7 +545,7 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ban = await db.get_gban(target_id)
     
     if not ban:
-        await utils.send_safe_reply(update, context, f"I don't know who this user is. I've probably never seen him. Try use ID or use the command replying to this user's message.")
+        await utils.send_safe_reply(update, context, f"I don't know who this user is. I've probably never seen them before. For me to see them, you'd have to reply to their message with this command or they'd have to contact me.")
         return
     
     u_link = await utils.create_user_link(target_id, context)

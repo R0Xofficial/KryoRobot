@@ -28,18 +28,23 @@ async def resolve_id(update: Update, context, input_str: str):
 
     if input_str.isdigit() or (input_str.startswith("-") and input_str[1:].isdigit()):
         uid = int(input_str)
-        if uid < 0: return None, "🧐 Channels cannot be globally banned."
+        if uid < 0: 
+            return None, "🧐 Chats/Channels cannot be globally banned."
         return uid, None
-    
+
     if input_str.startswith("@"):
         db_id = await db.get_user_by_username(input_str)
-        if db_id: return db_id, None
-        try:
-            res = await context.bot.get_chat(input_str)
-            if res.type == ChatType.PRIVATE: return res.id, None
-        except: pass
+        
+        if db_id: 
+            return db_id, None
+            
+        return None, (
+            "I don't know who this user is. I've probably never seen them before. "
+            "For me to see them, you'd have to reply to their message with this command "
+            "or use user ID."
+        )
 
-    return None, "I can't find this user. Try replying to them or using their ID."
+    return None, "Invalid input. Please use a numeric ID or @username."
 
 async def send_safe_reply(update: Update, context, text: str, **kwargs):
     try:

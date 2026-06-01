@@ -567,7 +567,7 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                f"<b>Reason:</b> <code>{utils.safe_escape(ban[0])}</code>\n<b>Date:</b> <code>{ban[2]}</code>\n")
         if sudo:
             a_link = await utils.create_user_link(ban[1], context)
-            msg += f"<b>Admin:</b> {a_link} [<code>{ban[1]}</code>]"
+            msg += f"<b>Banned By:</b> {a_link} [<code>{ban[1]}</code>]"
         else: msg += f"<b>Appeal Chat:</b> {APPEAL_CHAT_USERNAME}"
     else: msg = f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> Not Banned"
     await utils.send_safe_reply(update, context, msg)

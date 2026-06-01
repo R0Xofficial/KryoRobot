@@ -29,7 +29,7 @@ async def resolve_id(update: Update, context, input_str: str):
     if input_str.isdigit() or (input_str.startswith("-") and input_str[1:].isdigit()):
         uid = int(input_str)
         if uid < 0: 
-            return None, "🧐 Chats/Channels cannot be globally banned."
+            return None, "Chats/Channels cannot be globally banned."
         return uid, None
 
     if input_str.startswith("@"):

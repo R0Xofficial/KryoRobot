@@ -168,6 +168,7 @@ async def send_startup_log(context: ContextTypes.DEFAULT_TYPE):
 @bot_command("start")
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
+    chat = update.effective_chat
 
     if chat.type != ChatType.PRIVATE:
         return

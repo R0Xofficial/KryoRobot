@@ -165,6 +165,24 @@ async def send_startup_log(context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             logger.error(f"Failed to send startup log: {e}")
 
+@bot_command("start")
+async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    
+    welcome_text = (
+        f"👋 <b>Hello, {utils.safe_escape(user.first_name)}!</b>\n\n"
+        f"I am a specialized <b>Global Ban System</b> bot. My mission is to protect your groups "
+        f"from spammers, scammers, and malicious entities.\n\n"
+        f"<b>How it works:</b>\n"
+        f"Once a user is globally banned by my administrators, they will be automatically removed "
+        f"from all groups where I am present.\n\n"
+        f"<b>Getting Started:</b>\n"
+        f"To see all available commands and manage your settings, use the: <code>/help</code> command.\n\n"
+        f"<i>Make sure to add me as an administrator with 'Ban Users' and 'Delete Messages' permissions to ensure full protection.</i>"
+    )
+
+    await utils.send_safe_reply(update, context, welcome_text)
+
 @bot_command("help")
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id

@@ -80,7 +80,7 @@ async def enforcer_radar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     chat = update.effective_chat
     # 1. Registration check
-    if not db.is_enforced(chat.id): 
+    if not await db.is_enforced(chat.id): 
         return
 
     status_before = result.old_chat_member.status

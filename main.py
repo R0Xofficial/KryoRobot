@@ -168,14 +168,15 @@ async def send_startup_log(context: ContextTypes.DEFAULT_TYPE):
 @bot_command("start")
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
+
+    if chat.type != ChatType.PRIVATE:
+        return
     
     welcome_text = (
         f"👋 <b>Hello, {utils.safe_escape(user.first_name)}!</b>\n\n"
-        f"I am a specialized <b>Global Ban System</b> bot. My mission is to protect your groups "
-        f"from spammers, scammers, and malicious entities.\n\n"
+        f"I am a specialized <b>Security Group System</b> bot. My mission is to protect your groups from spammers, scammers, and malicious entities.\n\n"
         f"<b>How it works:</b>\n"
-        f"Once a user is globally banned by my administrators, they will be automatically removed "
-        f"from all groups where I am present.\n\n"
+        f"Once a user is globally banned by my administrators, they will be automatically removed from all groups where I am present.\n\n"
         f"<b>Getting Started:</b>\n"
         f"To see all available commands and manage your settings, use the: <code>/help</code> command.\n\n"
         f"<i>Make sure to add me as an administrator with 'Ban Users' and 'Delete Messages' permissions to ensure full protection.</i>"
@@ -192,6 +193,7 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_parts = [
         "<b>Bot Help</b>\n",
         "<b>User Commands:</b>",
+        "• <code>/start</code> - Sends start message.",
         "• <code>/help</code> - Sends this help message.",
         "• <code>/ping</code> - Check bot latency.",
         "• <code>/uptime</code> - See how long bot is running.",

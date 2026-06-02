@@ -339,6 +339,14 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• <code>/gbanstat</code> - Check your own ban status.\n"
     ]
 
+    if is_support:
+        help_parts.extend([
+            "<b>Sudo Commands:</b>",
+            "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Issue a global ban.",
+            "• <code>/dgban &lt;reply&gt; &lt;reason&gt;</code> - Issue a global ban and delete message.",
+            "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Revoke a global ban."
+        ])
+
     if is_sudo:
         help_parts.extend([
             "<b>Sudo Commands:</b>",
@@ -347,7 +355,8 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Revoke a global ban.",
             "• <code>/gbanstat &lt;target&gt;</code> - Check user's detailed ban info.",
             "• <code>/stats</code> - View database statistics.",
-            "• <code>/sudolist</code> - Show all bot administrators.",
+            "• <code>/sudolist</code> - Show all bot sudos.",
+            "• <code>/supportlist</code> - Show all bot support users.",
             "• <code>/leave</code> - Bot leaving current chat.\n"
         ])
 
@@ -498,9 +507,9 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         req_msg = (f"<b>#GBANREQUEST</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
-                   f"<b>Supporter:</b> {supporter_link} [<code>{admin.id}</code>]\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-                   f"<b>Reason:</b> <code>{reason}</code>")
+                   f"<b>Reason:</b> <code>{reason}</code>\n"
+                   f"<b>Admin:</b> {supporter_link} [<code>{admin.id}</code>]")
         
         if LOG_CHAT_ID:
             await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
@@ -598,10 +607,9 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         req_msg = (f"<b>#GBANREQUEST</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
-                   f"<b>Supporter:</b> {supporter_link} [<code>{admin.id}</code>]\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
                    f"<b>Reason:</b> <code>{reason}</code>\n"
-                   f"<i>Note: Message will be deleted upon approval.</i>")
+                   f"<b>Admin:</b> {supporter_link} [<code>{admin.id}</code>]")
         
         if LOG_CHAT_ID:
             await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
@@ -701,9 +709,9 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         req_msg = (f"<b>#UNGBANREQUEST</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
-                   f"<b>Supporter:</b> {supporter_link} [<code>{admin.id}</code>]\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-                   f"<b>Reason:</b> <code>{reason}</code>")
+                   f"<b>Reason:</b> <code>{reason}</code>\n"
+                   f"<b>Admin:</b> {supporter_link} [<code>{admin.id}</code>]")
         
         if LOG_CHAT_ID:
             await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
@@ -843,7 +851,7 @@ async def addsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if await db.is_support(target_id):
         user_link = await utils.create_user_link(target_id, context)
-        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>already</b> support.")
+        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>already</b> support user.")
         return
 
     if await db.is_sudo(target_id):
@@ -1227,7 +1235,7 @@ async def addsupport_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     # Check if user is already in support
     if await db.is_support(target_id):
         user_link = await utils.create_user_link(target_id, context)
-        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>already</b> support.")
+        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>already</b> support user.")
         return
 
     await db.add_support(target_id)

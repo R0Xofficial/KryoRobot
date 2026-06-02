@@ -1298,6 +1298,7 @@ def main():
     app.add_handler(ChatMemberHandler(enforcer_radar, ChatMemberHandler.CHAT_MEMBER), group=-100)
     app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, enforcer_message_checker), group=-100)
     app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, passive_data_logger), group=10)
+    app.add_handler(CallbackQueryHandler(support_callback_handler, pattern=r"^(apr|dec)_"))
 
     if app.job_queue:
         app.job_queue.run_once(send_startup_log, when=1)

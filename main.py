@@ -342,10 +342,10 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if is_support:
         help_parts.extend([
-            "<b>Sudo Commands:</b>",
+            "<b>Support Commands:</b>",
             "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Issue a global ban.",
             "• <code>/dgban &lt;reply&gt; &lt;reason&gt;</code> - Issue a global ban and delete message.",
-            "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Revoke a global ban."
+            "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Revoke a global ban.\n"
         ])
 
     if is_sudo:

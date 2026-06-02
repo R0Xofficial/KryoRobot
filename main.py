@@ -414,6 +414,14 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if await db.is_sudo(target_id) or target_id == context.bot.id:
         await update.message.reply_text("LoL, looks like... Someone tried gban privileged user. Nice Try."); return
 
+    if chat.type == ChatType.PRIVATE:
+        chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
+    elif chat.username:
+        chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
+        chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
+    else:
+        chat_display = utils.safe_escape(chat.title)
+
     if is_sudo:
         old_ban = await db.get_gban(target_id)
         if old_ban:
@@ -433,14 +441,6 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         admin_link = await utils.create_user_link(admin.id, context)
         curr_time = utils.get_utc_now()
         hashtag = "#GBANUPDATE" if old_ban else "#GBANNED"
-        
-        if chat.type == ChatType.PRIVATE:
-            chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
-        elif chat.username:
-            chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
-            chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
-        else:
-            chat_display = utils.safe_escape(chat.title)
 
         log_msg = (f"<b>{hashtag}</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
@@ -458,14 +458,6 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif is_support:
         request_id = f"g_{target_id}_{int(time.time())}"
-        
-        if chat.type == ChatType.PRIVATE:
-            chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
-        elif chat.username:
-            chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
-            chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
-        else:
-            chat_display = utils.safe_escape(chat.title)
 
         await db.save_support_request(
             request_id, target_id, reason, admin.id, 
@@ -516,6 +508,14 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not reason:
         await update.message.reply_text("Give a reason!"); return
 
+    if chat.type == ChatType.PRIVATE:
+            chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
+        elif chat.username:
+            chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
+            chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
+        else:
+            chat_display = utils.safe_escape(chat.title)
+
     if is_sudo:
         old_ban = await db.get_gban(target_id)
         if old_ban and old_ban[0].strip() == reason.strip():
@@ -539,14 +539,6 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         admin_link = await utils.create_user_link(admin.id, context)
         curr_time = utils.get_utc_now()
         hashtag = "#GBANUPDATE" if old_ban else "#GBANNED"
-        
-        if chat.type == ChatType.PRIVATE:
-            chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
-        elif chat.username:
-            chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
-            chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
-        else:
-            chat_display = utils.safe_escape(chat.title)
 
         log_msg = (f"<b>{hashtag}</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
@@ -564,12 +556,6 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif is_support:
         request_id = f"d_{target_id}_{int(time.time())}"
-        
-        if chat.username:
-            chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
-            chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
-        else:
-            chat_display = utils.safe_escape(chat.title)
 
         spammer_msg_id = update.message.reply_to_message.message_id
 
@@ -630,19 +616,19 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if await db.is_sudo(target_id) or target_id == context.bot.id:
         await update.message.reply_text("Privileged users is never gbanned..."); return
 
+    if is_private:
+            chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
+        elif chat.username:
+            chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
+            chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
+        else:
+            chat_display = utils.safe_escape(chat.title)
+
     if is_sudo:
         if await db.remove_gban(target_id):
             user_link = await utils.create_user_link(target_id, context)
             admin_link = await utils.create_user_link(admin.id, context)
             curr_time = utils.get_utc_now()
-
-            if is_private:
-                chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
-            elif chat.username:
-                chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
-                chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
-            else:
-                chat_display = utils.safe_escape(chat.title)
 
             log_msg = (f"<b>#UNGBANNED</b>\n"
                        f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"

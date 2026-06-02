@@ -325,6 +325,7 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @bot_command("help")
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
+    is_support = await db.is_support(user_id)
     is_sudo = await db.is_sudo(user_id)
     is_owner = (user_id == OWNER_ID)
 

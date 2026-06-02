@@ -469,7 +469,7 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_link = await utils.create_user_link(target_id, context)
         supporter_link = await utils.create_user_link(admin.id, context)
         
-        req_msg = (f"<b>Global Ban Request</b>\n"
+        req_msg = (f"<b>#GBANREQUEST</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
                    f"<b>Supporter:</b> {supporter_link} [<code>{admin.id}</code>]\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
@@ -575,7 +575,7 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_link = await utils.create_user_link(target_id, context)
         supporter_link = await utils.create_user_link(admin.id, context)
         
-        req_msg = (f"<b>Global Ban Request</b>\n"
+        req_msg = (f"<b>#GBANREQUEST</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
                    f"<b>Supporter:</b> {supporter_link} [<code>{admin.id}</code>]\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
@@ -677,7 +677,7 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_link = await utils.create_user_link(target_id, context)
         supporter_link = await utils.create_user_link(admin.id, context)
         
-        req_msg = (f"<b>Un-Gban Request</b>\n"
+        req_msg = (f"<b>#UNGBANREQUEST</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
                    f"<b>Supporter:</b> {supporter_link} [<code>{admin.id}</code>]\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"

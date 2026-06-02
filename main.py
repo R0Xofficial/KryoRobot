@@ -108,16 +108,25 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
             else:
                 feedback = "Done! Gbanned."
             
-            try:
-                await utils.send_safe_reply(
-                    update,
-                    context,
-                    chat_id=chat_id, 
-                    text=feedback,
-                    reply_to_message_id=msg_id if req_type == "gban" else None,
-                    parse_mode=ParseMode.HTML
-                )
-            except: pass
+                try:
+                    if chat_obj.type == ChatType.PRIVATE:
+                        await context.bot.send_message(
+                            chat_id=chat_id, 
+                            text=feedback, 
+                            parse_mode=ParseMode.HTML
+                        )
+                    else:
+                        await context.bot.send_message(
+                            chat_id=chat_id, text=feedback, parse_mode=ParseMode.HTML,
+                            reply_to_message_id=msg_id if req_type == "gban" else None
+                        )
+                except:
+                    try:
+                        await context.bot.send_message(
+                            chat_id=chat_id, text=feedback, 
+                            parse_mode=ParseMode.HTML, message_thread_id=thread_id
+                        )
+                    except: pass
 
         elif req_type == "ungban":
             if await db.remove_gban(target_id):
@@ -141,15 +150,26 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
                 
     else:
         await query.delete_message()
+        decline_text = "Request Declined."
         try:
-            await utils.send_safe_reply(
-                update,
-                context,
-                chat_id=chat_id, 
-                text="Request Declined.", 
-                reply_to_message_id=msg_id if req_type != "dgban" else None
-            )
-        except: pass
+            if chat_obj.type == ChatType.PRIVATE:
+                await context.bot.send_message(
+                    chat_id=chat_id, 
+                    text=decline_text, 
+                    parse_mode=ParseMode.HTML
+                )
+            else:
+                await context.bot.send_message(
+                    chat_id=chat_id, text=decline_text, parse_mode=ParseMode.HTML,
+                    reply_to_message_id=msg_id if req_type != "dgban" else None
+                )
+        except:
+            try:
+                await context.bot.send_message(
+                    chat_id=chat_id, text=decline_text, 
+                    parse_mode=ParseMode.HTML, message_thread_id=thread_id
+                )
+            except: pass
 
     await db.delete_support_request(req_id)
     await query.answer("Action processed.")

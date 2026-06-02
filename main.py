@@ -340,7 +340,7 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• <code>/gbanstat</code> - Check your own ban status.\n"
     ]
 
-    if is_support:
+    if is_support or is_sudo:
         help_parts.extend([
             "<b>Support Commands:</b>",
             "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Issue a global ban.",
@@ -351,9 +351,6 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if is_sudo:
         help_parts.extend([
             "<b>Sudo Commands:</b>",
-            "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Issue a global ban.",
-            "• <code>/dgban &lt;reply&gt; &lt;reason&gt;</code> - Issue a global ban and delete message.",
-            "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Revoke a global ban.",
             "• <code>/gbanstat &lt;target&gt;</code> - Check user's detailed ban info.",
             "• <code>/stats</code> - View database statistics.",
             "• <code>/sudolist</code> - Show all bot sudos.",

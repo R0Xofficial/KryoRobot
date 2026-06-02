@@ -10,7 +10,7 @@ import aiosqlite
 import telegram
 from telegram.error import Forbidden, BadRequest, RetryAfter, TimedOut
 from datetime import datetime, timezone
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode, ChatType, ChatMemberStatus
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ChatMemberHandler, ApplicationHandlerStop
 from telegram.request import HTTPXRequest
@@ -35,6 +35,109 @@ async def register_user(user, chat, context):
         if chat and chat.type in [ChatType.GROUP, ChatType.SUPERGROUP]:
             await db.log_chat(chat.id)
             await db.log_user_in_chat(user.id, chat.id)
+
+async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    admin = query.from_user
+    
+    if not await db.is_sudo(admin.id):
+        await query.answer("Only Sudo or Owner can process requests.", show_alert=True)
+        return
+
+    try:
+        action, req_id = query.data.split('_', 1)
+    except ValueError:
+        return
+
+    req = await db.get_support_request(req_id)
+    if not req:
+        await query.answer("Request not found (likely already processed).")
+        await query.delete_message()
+        return
+
+    target_id, reason, supporter_id, chat_id, msg_id, req_type = req
+    
+    user_link = await utils.create_user_link(target_id, context)
+    supporter_link = await utils.create_user_link(supporter_id, context)
+    approver_link = await utils.create_user_link(admin.id, context)
+    curr_time = utils.get_utc_now()
+
+    if action == "apr":
+        if req_type in ["gban", "dgban"]:
+            old_ban = await db.get_gban(target_id)
+            
+            await db.add_gban(target_id, supporter_id, reason)
+            
+            if req_type == "dgban":
+                try: await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+                except: pass
+
+            if await db.is_enforced(chat_id):
+                try: await context.bot.ban_chat_member(chat_id, target_id)
+                except: pass
+
+            hashtag = "#GBANUPDATE" if old_ban else "#GBANNED"
+            final_log = (f"<b>{hashtag}</b>\n"
+                         f"<b>Initiated From:</b> (Approved Request) [<code>{chat_id}</code>]\n\n"
+                         f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
+                         f"<b>Reason:</b> <code>{utils.safe_escape(reason)}</code>\n")
+            
+            if old_ban: 
+                final_log += f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>\n"
+            
+            final_log += (f"<b>Date:</b> <code>{curr_time}</code>\n"
+                          f"<b>Admin:</b> {supporter_link} [<code>{supporter_id}</code>]\n"
+                          f"<b>Approved By:</b> {approver_link} [<code>{admin.id}</code>]")
+            
+            await query.edit_message_text(final_log, parse_mode=ParseMode.HTML)
+            
+            if old_ban:
+                feedback = (f"Done! Gban reason updated.\n"
+                            f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>")
+            else:
+                feedback = "Done! Gbanned."
+            
+            try:
+                await context.bot.send_message(
+                    chat_id=chat_id, 
+                    text=feedback, 
+                    reply_to_message_id=msg_id if req_type == "gban" else None,
+                    parse_mode=ParseMode.HTML
+                )
+            except: pass
+
+        elif req_type == "ungban":
+            if await db.remove_gban(target_id):
+                final_log = (f"<b>#UNGBANNED</b>\n"
+                             f"<b>Initiated From:</b> (Approved Request) [<code>{chat_id}</code>]\n\n"
+                             f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
+                             f"<b>Reason:</b> <code>{utils.safe_escape(reason)}</code>\n"
+                             f"<b>Date:</b> <code>{curr_time}</code>\n"
+                             f"<b>Admin:</b> {supporter_link} [<code>{supporter_id}</code>]\n"
+                             f"<b>Approved By:</b> {approver_link} [<code>{admin.id}</code>]")
+                
+                await query.edit_message_text(final_log, parse_mode=ParseMode.HTML)
+                
+                context.job_queue.run_once(propagate_unban, when=1, data={
+                    'user_id': target_id, 
+                    'chat_id': chat_id, 
+                    'reply_to': msg_id,
+                    'thread_id': thread_id, 
+                    'is_private': False
+                })
+                
+    else:
+        await query.delete_message()
+        try:
+            await context.bot.send_message(
+                chat_id=chat_id, 
+                text="Request Declined.", 
+                reply_to_message_id=msg_id if req_type != "dgban" else None
+            )
+        except: pass
+
+    await db.delete_support_request(req_id)
+    await query.answer("Action processed.")
 
 # --- LOGGERS ---
 async def passive_data_logger(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -132,7 +235,6 @@ async def enforcer_message_checker(update: Update, context: ContextTypes.DEFAULT
     if not await db.is_enforced(chat.id):
         return
 
-    # Active user check: Ban + Delete Message + Alert
     ban_info = await db.get_gban(user.id)
     if ban_info:
         if update.effective_message:
@@ -275,194 +377,316 @@ async def uptime_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     admin = update.effective_user
     chat = update.effective_chat
-    if not await db.is_sudo(admin.id): return
+    
+    is_sudo = await db.is_sudo(admin.id)
+    is_support = await db.is_support(admin.id)
+    
+    if not (is_sudo or is_support):
+        return
+
     target_id, reason = None, None
     if update.message.reply_to_message and not update.message.reply_to_message.forum_topic_created:
         target_id = update.message.reply_to_message.from_user.id
         reason = " ".join(context.args) if context.args else None
     elif context.args:
         target_id, err = await utils.resolve_id(update, context, context.args[0])
-        if err: await update.message.reply_text(err); return
+        if err: 
+            await update.message.reply_text(err)
+            return
         reason = " ".join(context.args[1:]) if len(context.args) > 1 else None
 
-    if await db.is_sudo(target_id) or target_id == context.bot.id:
-        await update.message.reply_text("LoL, looks like... Someone tried gban privileged user. Nice Try."); return
     if not target_id:
         await update.message.reply_text("Who is the target of the command? The stars in the sky?"); return
     if not reason:
         await update.message.reply_text("Give a reason!"); return
+    if await db.is_sudo(target_id) or target_id == context.bot.id:
+        await update.message.reply_text("LoL, looks like... Someone tried gban privileged user. Nice Try."); return
+
+    if is_sudo:
+        old_ban = await db.get_gban(target_id)
+        if old_ban:
+            if old_ban[0].strip() == reason.strip():
+                user_link = await utils.create_user_link(target_id, context)
+                await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is already globally banned for the same reason. <b>No changes made.</b>")
+                return
+
+        await utils.send_safe_reply(update, context, "Ok!")
         
-    old_ban = await db.get_gban(target_id)
-    if old_ban:
-        old_reason = old_ban[0]
-        if old_reason.strip() == reason.strip():
-            user_link = await utils.create_user_link(target_id, context)
-            await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is already globally banned for the same reason. <b>No changes made.</b>")
-            return
+        await db.add_gban(target_id, admin.id, reason)
+        if chat.type != ChatType.PRIVATE and await db.is_enforced(chat.id):
+            try: await context.bot.ban_chat_member(chat.id, target_id)
+            except: pass
 
-    if chat.type == ChatType.PRIVATE:
-        chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
-    elif chat.username:
-        chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
-        chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
-    else:
-        chat_display = utils.safe_escape(chat.title)
+        user_link = await utils.create_user_link(target_id, context)
+        admin_link = await utils.create_user_link(admin.id, context)
+        curr_time = utils.get_utc_now()
+        hashtag = "#GBANUPDATE" if old_ban else "#GBANNED"
+        
+        if chat.type == ChatType.PRIVATE:
+            chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
+        elif chat.username:
+            chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
+            chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
+        else:
+            chat_display = utils.safe_escape(chat.title)
 
-    await utils.send_safe_reply(update, context, f"Ok!")
+        log_msg = (f"<b>{hashtag}</b>\n"
+                   f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
+                   f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
+                   f"<b>Reason:</b> <code>{utils.safe_escape(reason)}</code>\n")
+        if old_ban: log_msg += f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>\n"
+        log_msg += f"<b>Date:</b> <code>{curr_time}</code>\n<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]"
+        
+        if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
+        await asyncio.sleep(0.5)
+        if old_ban:
+            await utils.send_safe_reply(update, context, f"Done! Gban reason updated.\n<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>")
+        else:
+            await utils.send_safe_reply(update, context, f"Done! Gbanned.")
 
-    if chat.type != ChatType.PRIVATE and await db.is_enforced(chat.id):
-        try:
-            await context.bot.ban_chat_member(chat.id, target_id)
-        except Exception as e:
-            logger.warning(f"Could not locally ban {target_id}: {e}")
+    elif is_support:
+        request_id = f"g_{target_id}_{int(time.time())}"
+        
+        if chat.type == ChatType.PRIVATE:
+            chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
+        elif chat.username:
+            chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
+            chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
+        else:
+            chat_display = utils.safe_escape(chat.title)
 
-    await db.add_gban(target_id, admin.id, reason)
-    user_link = await utils.create_user_link(target_id, context)
-    admin_link = await utils.create_user_link(admin.id, context)
-    curr_time = utils.get_utc_now()
-    hashtag = "#GBANUPDATE" if old_ban else "#GBANNED"
-    
-    log_msg = (f"<b>{hashtag}</b>\n"
-               f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
-               f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-               f"<b>Reason:</b> <code>{utils.safe_escape(reason)}</code>\n")
-    if old_ban: log_msg += f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>\n"
-    log_msg += f"<b>Date:</b> <code>{curr_time}</code>\n<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]"
-    if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
-    # await utils.send_safe_reply(update, context, log_msg)
-
-    await asyncio.sleep(0.5)
-    if old_ban:
-        await utils.send_safe_reply(update, context, f"Done! Gban reason updated.\n<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>")
-    else:
-        await utils.send_safe_reply(update, context, f"Done! Gbanned.")
+        await db.save_support_request(
+            request_id, target_id, reason, admin.id, 
+            chat.id, update.effective_message.message_id, "gban",
+            update.effective_message.message_thread_id
+        )
+        
+        keyboard = InlineKeyboardMarkup([[
+            InlineKeyboardButton("Approve (Gban)", callback_data=f"apr_{request_id}"),
+            InlineKeyboardButton("Decline", callback_data=f"dec_{request_id}")
+        ]])
+        
+        user_link = await utils.create_user_link(target_id, context)
+        supporter_link = await utils.create_user_link(admin.id, context)
+        
+        req_msg = (f"<b>Global Ban Request</b>\n"
+                   f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
+                   f"<b>Supporter:</b> {supporter_link} [<code>{admin.id}</code>]\n"
+                   f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
+                   f"<b>Reason:</b> <code>{reason}</code>")
+        
+        if LOG_CHAT_ID:
+            await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+        
+        await update.message.reply_text("Request Sended.")
 
 @bot_command("dgban")
 async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     admin = update.effective_user
     chat = update.effective_chat
-    if not await db.is_sudo(admin.id): return
     
+    is_sudo = await db.is_sudo(admin.id)
+    is_support = await db.is_support(admin.id)
+    
+    if not (is_sudo or is_support): 
+        return
+
     if not update.message.reply_to_message or update.message.reply_to_message.forum_topic_created:
         await update.message.reply_text("Who is the target of the command? The stars in the sky?")
         return
 
     target_id = update.message.reply_to_message.from_user.id
-    reason = " ".join(context.args) if context.args else None
+    msg_text = update.effective_message.text_html
+    reason = msg_text.split(None, 1)[1] if len(msg_text.split()) > 1 else None
 
     if await db.is_sudo(target_id) or target_id == context.bot.id:
         await update.message.reply_text("LoL, looks like... Someone tried gban privileged user. Nice Try."); return
     if not reason:
         await update.message.reply_text("Give a reason!"); return
-        
-    old_ban = await db.get_gban(target_id)
-    if old_ban:
-        old_reason = old_ban[0]
-        if old_reason.strip() == reason.strip():
+
+    if is_sudo:
+        old_ban = await db.get_gban(target_id)
+        if old_ban and old_ban[0].strip() == reason.strip():
             user_link = await utils.create_user_link(target_id, context)
-            await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is already globally banned for the same reason. <b>No changes made.</b>")
+            await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is already globally banned for the same reason.")
             return
 
-    if chat.type == ChatType.PRIVATE:
-        chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
-    elif chat.username:
-        chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
-        chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
-    else:
-        chat_display = utils.safe_escape(chat.title)
+        await utils.send_safe_reply(update, context, "Ok!")
 
-    await utils.send_safe_reply(update, context, f"Ok!")
-
-    try:
-        await update.message.reply_to_message.delete()
-    except:
-        pass
-
-    if chat.type != ChatType.PRIVATE and await db.is_enforced(chat.id):
         try:
-            await context.bot.ban_chat_member(chat.id, target_id)
-        except Exception as e:
-            logger.warning(f"Could not locally ban {target_id}: {e}")
+            await update.message.reply_to_message.delete()
+        except:
+            pass
+        
+        await db.add_gban(target_id, admin.id, reason)
+        if chat.type != ChatType.PRIVATE and await db.is_enforced(chat.id):
+            try: await context.bot.ban_chat_member(chat.id, target_id)
+            except: pass
 
-    await db.add_gban(target_id, admin.id, reason)
-    user_link = await utils.create_user_link(target_id, context)
-    admin_link = await utils.create_user_link(admin.id, context)
-    curr_time = utils.get_utc_now()
-    hashtag = "#GBANUPDATE" if old_ban else "#GBANNED"
-    
-    log_msg = (f"<b>{hashtag}</b>\n"
-               f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
-               f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-               f"<b>Reason:</b> <code>{utils.safe_escape(reason)}</code>\n")
-    if old_ban: log_msg += f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>\n"
-    log_msg += f"<b>Date:</b> <code>{curr_time}</code>\n<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]"
-    if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
+        user_link = await utils.create_user_link(target_id, context)
+        admin_link = await utils.create_user_link(admin.id, context)
+        curr_time = utils.get_utc_now()
+        hashtag = "#GBANUPDATE" if old_ban else "#GBANNED"
+        
+        if chat.type == ChatType.PRIVATE:
+            chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
+        elif chat.username:
+            chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
+            chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
+        else:
+            chat_display = utils.safe_escape(chat.title)
 
-    await asyncio.sleep(0.5)
-    if old_ban:
-        await utils.send_safe_reply(update, context, f"Done! Gban reason updated.\n<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>")
-    else:
-        await utils.send_safe_reply(update, context, f"Done! Gbanned.")
+        log_msg = (f"<b>{hashtag}</b>\n"
+                   f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
+                   f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
+                   f"<b>Reason:</b> <code>{utils.safe_escape(reason)}</code>\n")
+        if old_ban: log_msg += f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>\n"
+        log_msg += f"<b>Date:</b> <code>{curr_time}</code>\n<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]"
+        
+        if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
+        await asyncio.sleep(0.5)
+        if old_ban:
+            await utils.send_safe_reply(update, context, f"Done! Gban reason updated.\n<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>")
+        else:
+            await utils.send_safe_reply(update, context, f"Done! Gbanned.")
+
+    elif is_support:
+        request_id = f"d_{target_id}_{int(time.time())}"
+        
+        if chat.username:
+            chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
+            chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
+        else:
+            chat_display = utils.safe_escape(chat.title)
+
+        spammer_msg_id = update.message.reply_to_message.message_id
+
+        await db.save_support_request(
+            request_id, target_id, reason, admin.id, 
+            chat.id, spammer_msg_id, "dgban",
+            update.effective_message.message_thread_id
+        )
+        
+        keyboard = InlineKeyboardMarkup([[
+            InlineKeyboardButton("Approve (GBan & Delete Msg)", callback_data=f"apr_{request_id}"),
+            InlineKeyboardButton("Decline", callback_data=f"dec_{request_id}")
+        ]])
+        
+        user_link = await utils.create_user_link(target_id, context)
+        supporter_link = await utils.create_user_link(admin.id, context)
+        
+        req_msg = (f"<b>Global Ban Request</b>\n"
+                   f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
+                   f"<b>Supporter:</b> {supporter_link} [<code>{admin.id}</code>]\n"
+                   f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
+                   f"<b>Reason:</b> <code>{reason}</code>\n"
+                   f"<i>Note: Message will be deleted upon approval.</i>")
+        
+        if LOG_CHAT_ID:
+            await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+        
+        await update.message.reply_text("Request Sended.")
 
 @bot_command("ungban")
 async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     admin = update.effective_user
     chat = update.effective_chat
     thread_id = update.effective_message.message_thread_id
-    is_private = update.effective_chat.type == ChatType.PRIVATE
-    if not await db.is_sudo(admin.id): return
-    target_id = None
-    reason = None
+    is_private = chat.type == ChatType.PRIVATE
+    
+    is_sudo = await db.is_sudo(admin.id)
+    is_support = await db.is_support(admin.id)
+    
+    if not (is_sudo or is_support): 
+        return
 
-    # 1. Sprawdzanie Reply
+    target_id, reason = None, None
     if update.message.reply_to_message and not update.message.reply_to_message.forum_topic_created:
         target_id = update.message.reply_to_message.from_user.id
         reason = " ".join(context.args) if context.args else None
-    
     elif context.args:
         target_id, err = await utils.resolve_id(update, context, context.args[0])
-        if not err:
-            reason = " ".join(context.args[1:]) if len(context.args) > 1 else None
+        if err: 
+            await update.message.reply_text(err)
+            return
+        reason = " ".join(context.args[1:]) if len(context.args) > 1 else None
 
-    if await db.is_sudo(target_id) or target_id == context.bot.id:
-        await update.message.reply_text("Privileged users is never gbanned."); return
     if not target_id:
         await update.message.reply_text("Who is the target of the command? The stars in the sky?"); return
     if not reason:
         await update.message.reply_text("Give a reason!"); return
+    if await db.is_sudo(target_id) or target_id == context.bot.id:
+        await update.message.reply_text("Privileged users is never gbanned..."); return
 
-    await utils.send_safe_reply(update, context, "Let's give him another chance!")
-    await asyncio.sleep(0.5)
-    user_link = await utils.create_user_link(target_id, context)
+    if is_sudo:
+        if await db.remove_gban(target_id):
+            user_link = await utils.create_user_link(target_id, context)
+            admin_link = await utils.create_user_link(admin.id, context)
+            curr_time = utils.get_utc_now()
 
-    if chat.type == ChatType.PRIVATE:
-        chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
-    elif chat.username:
-        chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
-        chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
-    else:
-        chat_display = utils.safe_escape(chat.title)
+            if is_private:
+                chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
+            elif chat.username:
+                chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
+                chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
+            else:
+                chat_display = utils.safe_escape(chat.title)
 
-    if await db.remove_gban(target_id):       
-        admin_link = await utils.create_user_link(admin.id, context)
-        curr_time = utils.get_utc_now()
-        log_msg = (f"<b>#UNGBANNED</b>\n"
+            log_msg = (f"<b>#UNGBANNED</b>\n"
+                       f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
+                       f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
+                       f"<b>Reason:</b> <code>{utils.safe_escape(reason)}</code>\n"
+                       f"<b>Date:</b> <code>{curr_time}</code>\n"
+                       f"<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]")
+
+            await utils.send_safe_reply(update, context, "Let's give him another chance!")
+            if LOG_CHAT_ID: 
+                await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
+            
+            context.job_queue.run_once(propagate_unban, when=1, data={
+                'user_id': target_id,
+                'chat_id': chat.id,
+                'reply_to': update.message.message_id,
+                'thread_id': thread_id,
+                'is_private': is_private
+            })
+        else:
+            user_link = await utils.create_user_link(target_id, context)
+            await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is not globally banned.")
+
+    elif is_support:
+        if not await db.get_gban(target_id):
+            user_link = await utils.create_user_link(target_id, context)
+            await update.message.reply_html(f"User {user_link} is not globally banned.")
+            return
+
+        request_id = f"u_{target_id}_{int(time.time())}"
+        
+        await db.save_support_request(
+            request_id, target_id, reason, admin.id, 
+            chat.id, update.effective_message.message_id, "ungban",
+            update.effective_message.message_thread_id
+        )
+        
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+        keyboard = InlineKeyboardMarkup([[
+            InlineKeyboardButton("Approve (Un-Gban)", callback_data=f"apr_{request_id}"),
+            InlineKeyboardButton("Decline", callback_data=f"dec_{request_id}")
+        ]])
+        
+        user_link = await utils.create_user_link(target_id, context)
+        supporter_link = await utils.create_user_link(admin.id, context)
+        
+        req_msg = (f"<b>Un-Gban Request</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
+                   f"<b>Supporter:</b> {supporter_link} [<code>{admin.id}</code>]\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-                   f"<b>Reason:</b> <code>{utils.safe_escape(reason)}</code>\n"
-                   f"<b>Date:</b> <code>{curr_time}</code>\n"
-                   f"<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]")
-        # await utils.send_safe_reply(update, context, log_msg)
-        if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
-        context.job_queue.run_once(propagate_unban, when=1, data={
-            'user_id': target_id,
-            'chat_id': chat.id,
-            'reply_to': update.message.message_id,
-            'thread_id': thread_id,
-            'is_private': is_private
-        })
-    else:
-        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is not globally banned.")
+                   f"<b>Reason:</b> <code>{reason}</code>")
+        
+        if LOG_CHAT_ID:
+            await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+        
+        await update.message.reply_text("Request Sended.")
 
 async def propagate_unban(context: ContextTypes.DEFAULT_TYPE):
     start_time = time.time()
@@ -944,6 +1168,99 @@ async def auto_backup_job(context: ContextTypes.DEFAULT_TYPE):
             logger.info("Automatic backup sent to owner.")
         except Exception as e:
             logger.error(f"Auto-backup failed: {e}")
+
+@bot_command("addsupport")
+async def addsupport_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != OWNER_ID: 
+        return
+    
+    target_id = None
+    if update.message.reply_to_message and not update.message.reply_to_message.forum_topic_created:
+        target_id = update.message.reply_to_message.from_user.id
+    elif context.args:
+        target_id, err = await utils.resolve_id(update, context, context.args[0])
+        if err: 
+            await update.message.reply_text(err)
+            return
+            
+    if not target_id:
+        await update.message.reply_text("Who is the target of the command? The stars in the sky?")
+        return
+    if target_id == OWNER_ID:
+        await update.message.reply_text("You are already the Master Owner.")
+        return
+
+    # Check if user is already in support
+    if await db.is_support(target_id):
+        user_link = await utils.create_user_link(target_id, context)
+        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>already</b> support.")
+        return
+
+    await db.add_support(target_id)
+    user_link = await utils.create_user_link(target_id, context)
+    curr_time = utils.get_utc_now()
+
+    log_msg = (f"<b>#SUPPORT</b>\n"
+                f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
+                f"<b>Date:</b> <code>{curr_time}</code>")
+
+    await utils.send_safe_reply(update, context, log_msg)
+    if LOG_CHAT_ID:
+        await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
+
+@bot_command("delsupport")
+async def delsupport_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != OWNER_ID: 
+        return
+    
+    target_id = None
+    if update.message.reply_to_message and not update.message.reply_to_message.forum_topic_created:
+        target_id = update.message.reply_to_message.from_user.id
+    elif context.args:
+        target_id, err = await utils.resolve_id(update, context, context.args[0])
+        if err: 
+            await update.message.reply_text(err)
+            return
+            
+    if not target_id:
+        await update.message.reply_text("Who is the target of the command? The stars in the sky?")
+        return
+
+    if target_id == OWNER_ID:
+        await update.message.reply_text("LoL... You cannot remove yourself.")
+        return
+
+    if await db.remove_support(target_id):
+        user_link = await utils.create_user_link(target_id, context)
+        curr_time = utils.get_utc_now()
+
+        log_msg = (f"<b>#UNSUPPORT</b>\n"
+                   f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
+                   f"<b>Date:</b> <code>{curr_time}</code>")
+
+        await utils.send_safe_reply(update, context, log_msg)
+        if LOG_CHAT_ID:
+            await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
+    else:
+        await update.message.reply_text("This user was not in the Support list.")
+
+@bot_command(["supportlist", "supports"])
+async def supportlist_cmd(update, context):
+    if not await db.is_sudo(update.effective_user.id): 
+        return
+    
+    supports = await db.get_all_supports()
+    if not supports:
+        await update.message.reply_text("The Support list is empty.")
+        return
+
+    msg = "<b>Support Team Members:</b>\n\n"
+    
+    for s_id in supports:
+        u_link = await utils.create_user_link(s_id, context)
+        msg += f"• {u_link} [<code>{s_id}</code>]\n"
+    
+    await utils.send_safe_reply(update, context, msg)
 
 # --- main.py ---
 

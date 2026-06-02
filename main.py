@@ -62,17 +62,16 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
     approver_link = await utils.create_user_link(admin.id, context)
     curr_time = utils.get_utc_now()
 
-    try:
-        chat_obj = await context.bot.get_chat(chat_id)
+    chat_obj = await context.bot.get_chat(chat_id)
         
-        if chat_obj.type == ChatType.PRIVATE:
-            supporter_obj = await context.bot.get_chat(supporter_id)
-            chat_display = f"PM with {utils.safe_escape(supporter_obj.first_name)}"
-        elif chat_obj.username:
-            chat_link = f"https://t.me/{chat_obj.username}/{msg_id}"
-            chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat_obj.title)}</a>"
-        else:
-            chat_display = utils.safe_escape(chat_obj.title)
+    if chat_obj.type == ChatType.PRIVATE:
+        supporter_obj = await context.bot.get_chat(supporter_id)
+        chat_display = f"PM with {utils.safe_escape(supporter_obj.first_name)}"
+    elif chat_obj.username:
+        chat_link = f"https://t.me/{chat_obj.username}/{msg_id}"
+        chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat_obj.title)}</a>"
+    else:
+        chat_display = utils.safe_escape(chat_obj.title)
 
     if action == "apr":
         if req_type in ["gban", "dgban"]:

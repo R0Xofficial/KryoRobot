@@ -55,7 +55,7 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
         await query.delete_message()
         return
 
-    target_id, reason, supporter_id, chat_id, msg_id, req_type = req
+    target_id, reason, supporter_id, chat_id, msg_id, req_type, thread_id = req
     
     user_link = await utils.create_user_link(target_id, context)
     supporter_link = await utils.create_user_link(supporter_id, context)

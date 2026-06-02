@@ -161,3 +161,23 @@ async def remove_chat(chat_id):
     """Removes a chat from settings and federation mapping (Cleanup)."""
     await db_query("DELETE FROM bot_chats WHERE chat_id = ?", (int(chat_id),), commit=True)
     await db_query("DELETE FROM user_chats WHERE chat_id = ?", (int(chat_id),), commit=True)
+
+# --- SUPPORT REQUEST ENGINE ---
+
+async def save_support_request(req_id, target_id, reason, admin_id, chat_id, msg_id, req_type):
+    """Persistently stores a gban/ungban request from a supporter."""
+    await db_query('''INSERT INTO support_requests 
+                      (request_id, target_id, reason, admin_id, chat_id, msg_id, type) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?)''', 
+                   (req_id, int(target_id), reason, int(admin_id), int(chat_id), int(msg_id), req_type), 
+                   commit=True)
+
+async def get_support_request(req_id):
+    """Fetches full details of a pending request by its ID."""
+    return await db_query('''SELECT target_id, reason, admin_id, chat_id, msg_id, type 
+                             FROM support_requests WHERE request_id = ?''', 
+                          (req_id,), fetch="one")
+
+async def delete_support_request(req_id):
+    """Removes a request from the database once processed or declined."""
+    await db_query("DELETE FROM support_requests WHERE request_id = ?", (req_id,), commit=True)

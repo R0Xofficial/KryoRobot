@@ -509,11 +509,11 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if chat.type == ChatType.PRIVATE:
             chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
-        elif chat.username:
-            chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
-            chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
-        else:
-            chat_display = utils.safe_escape(chat.title)
+    elif chat.username:
+        chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
+        chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
+    else:
+        chat_display = utils.safe_escape(chat.title)
 
     if is_sudo:
         old_ban = await db.get_gban(target_id)
@@ -616,12 +616,12 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Privileged users is never gbanned..."); return
 
     if is_private:
-            chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
-        elif chat.username:
-            chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
-            chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
-        else:
-            chat_display = utils.safe_escape(chat.title)
+        chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
+    elif chat.username:
+        chat_link = f"https://t.me/{chat.username}/{update.effective_message.message_id}"
+        chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
+    else:
+        chat_display = utils.safe_escape(chat.title)
 
     if is_sudo:
         if await db.remove_gban(target_id):

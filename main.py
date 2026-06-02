@@ -421,6 +421,8 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         chat_display = utils.safe_escape(chat.title)
 
+    await utils.send_safe_reply(update, context, "Ok!")
+
     if is_sudo:
         old_ban = await db.get_gban(target_id)
         if old_ban:
@@ -428,8 +430,6 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 user_link = await utils.create_user_link(target_id, context)
                 await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is already globally banned for the same reason. <b>No changes made.</b>")
                 return
-
-        await utils.send_safe_reply(update, context, "Ok!")
         
         await db.add_gban(target_id, admin.id, reason)
         if chat.type != ChatType.PRIVATE and await db.is_enforced(chat.id):
@@ -465,7 +465,7 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         
         keyboard = InlineKeyboardMarkup([[
-            InlineKeyboardButton("Approve (Gban)", callback_data=f"apr_{request_id}"),
+            InlineKeyboardButton("Approve", callback_data=f"apr_{request_id}"),
             InlineKeyboardButton("Decline", callback_data=f"dec_{request_id}")
         ]])
         
@@ -515,14 +515,14 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         chat_display = utils.safe_escape(chat.title)
 
+    await utils.send_safe_reply(update, context, "Ok!")
+
     if is_sudo:
         old_ban = await db.get_gban(target_id)
         if old_ban and old_ban[0].strip() == reason.strip():
             user_link = await utils.create_user_link(target_id, context)
             await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is already globally banned for the same reason.")
             return
-
-        await utils.send_safe_reply(update, context, "Ok!")
 
         try:
             await update.message.reply_to_message.delete()
@@ -565,7 +565,7 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         
         keyboard = InlineKeyboardMarkup([[
-            InlineKeyboardButton("Approve (GBan & Delete Msg)", callback_data=f"apr_{request_id}"),
+            InlineKeyboardButton("Approve", callback_data=f"apr_{request_id}"),
             InlineKeyboardButton("Decline", callback_data=f"dec_{request_id}")
         ]])
         
@@ -615,6 +615,11 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if await db.is_sudo(target_id) or target_id == context.bot.id:
         await update.message.reply_text("Privileged users is never gbanned..."); return
 
+    if not await db.get_gban(target_id):
+        user_link = await utils.create_user_link(target_id, context)
+        await update.message.reply_html(f"User {user_link} [<code>{target_id}</code>] is not globally banned.")
+        return
+
     if is_private:
         chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
     elif chat.username:
@@ -622,6 +627,8 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_display = f"<a href='{chat_link}'>{utils.safe_escape(chat.title)}</a>"
     else:
         chat_display = utils.safe_escape(chat.title)
+
+    await utils.send_safe_reply(update, context, "Let's give him another chance!")
 
     if is_sudo:
         if await db.remove_gban(target_id):
@@ -636,7 +643,6 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                        f"<b>Date:</b> <code>{curr_time}</code>\n"
                        f"<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]")
 
-            await utils.send_safe_reply(update, context, "Let's give him another chance!")
             if LOG_CHAT_ID: 
                 await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
             
@@ -652,11 +658,6 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is not globally banned.")
 
     elif is_support:
-        if not await db.get_gban(target_id):
-            user_link = await utils.create_user_link(target_id, context)
-            await update.message.reply_html(f"User {user_link} is not globally banned.")
-            return
-
         request_id = f"u_{target_id}_{int(time.time())}"
         
         await db.save_support_request(
@@ -667,7 +668,7 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         from telegram import InlineKeyboardButton, InlineKeyboardMarkup
         keyboard = InlineKeyboardMarkup([[
-            InlineKeyboardButton("Approve (Un-Gban)", callback_data=f"apr_{request_id}"),
+            InlineKeyboardButton("Approve", callback_data=f"apr_{request_id}"),
             InlineKeyboardButton("Decline", callback_data=f"dec_{request_id}")
         ]])
         

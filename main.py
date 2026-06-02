@@ -97,8 +97,7 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
                 final_log += f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>\n"
             
             final_log += (f"<b>Date:</b> <code>{curr_time}</code>\n"
-                          f"<b>Admin:</b> {supporter_link} [<code>{supporter_id}</code>]\n"
-                          f"<b>Approved By:</b> {approver_link} [<code>{admin.id}</code>]")
+                          f"<b>Admin:</b> {supporter_link} [<code>{supporter_id}</code>]\n")
             
             await query.edit_message_text(final_log, parse_mode=ParseMode.HTML)
             

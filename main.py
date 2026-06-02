@@ -344,8 +344,8 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "<b>Support Commands:</b>",
             "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Issue a global ban.",
             "• <code>/dgban &lt;reply&gt; &lt;reason&gt;</code> - Issue a global ban and delete message.",
-            "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Revoke a global ban.\n",
-            "• <code>/gbanstat &lt;target&gt;</code> - Check user's detailed ban info."
+            "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Revoke a global ban.",
+            "• <code>/gbanstat &lt;target&gt;</code> - Check user's detailed ban info.\n"
         ])
 
     if is_sudo:
@@ -491,7 +491,7 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await db.save_support_request(
             request_id, target_id, reason, admin.id, 
             chat.id, update.effective_message.message_id, "gban",
-            update.effective_message.message_thread_id
+            update.effective_message.message_thread_id, None
         )
         
         keyboard = InlineKeyboardMarkup([[
@@ -593,7 +593,8 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             request_id, target_id, reason, admin.id, 
             chat.id, cmd_id, "dgban",
             update.effective_message.message_thread_id,
-            target_msg_id)
+            target_msg_id
+        )
         
         keyboard = InlineKeyboardMarkup([[
             InlineKeyboardButton("Approve", callback_data=f"apr_{request_id}"),
@@ -693,7 +694,7 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await db.save_support_request(
             request_id, target_id, reason, admin.id, 
             chat.id, update.effective_message.message_id, "ungban",
-            update.effective_message.message_thread_id
+            update.effective_message.message_thread_id, None
         )
         
         from telegram import InlineKeyboardButton, InlineKeyboardMarkup

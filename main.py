@@ -129,6 +129,7 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
 
         elif req_type == "ungban":
             if await db.remove_gban(target_id):
+                is_origin_private = (chat_obj.type == ChatType.PRIVATE)
                 final_log = (f"<b>#UNGBANNED</b>\n"
                              f"<b>Initiated From:</b> {chat_display} [<code>{chat_id}</code>]\n\n"
                              f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
@@ -143,7 +144,7 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
                     'chat_id': chat_id, 
                     'reply_to': msg_id,
                     'thread_id': thread_id, 
-                    'is_private': False
+                    'is_private': is_origin_private
                 })
                 
     else:

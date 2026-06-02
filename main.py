@@ -787,10 +787,11 @@ async def propagate_unban(context: ContextTypes.DEFAULT_TYPE):
 async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     sudo = await db.is_sudo(user.id)
+    support = await db.is_support(user.id)
     target_id = None
     error_msg = None
 
-    if sudo:
+    if sudo or support:
         if update.message.reply_to_message and not update.message.reply_to_message.forum_topic_created:
             target_id = update.message.reply_to_message.from_user.id
         elif context.args:

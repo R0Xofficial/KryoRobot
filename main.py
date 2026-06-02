@@ -109,9 +109,11 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
                 feedback = "Done! Gbanned."
             
             try:
-                await context.bot.send_message(
+                await utils.send_safe_reply(
+                    update,
+                    context,
                     chat_id=chat_id, 
-                    text=feedback, 
+                    text=feedback,
                     reply_to_message_id=msg_id if req_type == "gban" else None,
                     parse_mode=ParseMode.HTML
                 )
@@ -140,7 +142,9 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
     else:
         await query.delete_message()
         try:
-            await context.bot.send_message(
+            await utils.send_safe_reply(
+                update,
+                context,
                 chat_id=chat_id, 
                 text="Request Declined.", 
                 reply_to_message_id=msg_id if req_type != "dgban" else None

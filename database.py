@@ -26,6 +26,19 @@ def init_db():
         # Federation Mapping table (User <-> Chat relationship)
         conn.execute('''CREATE TABLE IF NOT EXISTS user_chats 
                         (user_id INTEGER, chat_id INTEGER, PRIMARY KEY (user_id, chat_id))''')
+
+        # TABLE: Support team members
+        conn.execute('CREATE TABLE IF NOT EXISTS support_users (user_id INTEGER PRIMARY KEY)')
+
+        # TABLE: Pending ban/unban requests
+        conn.execute('''CREATE TABLE IF NOT EXISTS support_requests (
+                        request_id TEXT PRIMARY KEY, 
+                        target_id INTEGER, 
+                        reason TEXT, 
+                        admin_id INTEGER, 
+                        chat_id INTEGER, 
+                        msg_id INTEGER, 
+                        type TEXT)''')
         conn.commit()
 
 async def db_query(query, params=(), fetch=None, commit=False):
@@ -98,6 +111,27 @@ async def remove_sudo(user_id):
 async def get_all_sudos():
     """Returns a list of all sudo user IDs."""
     res = await db_query("SELECT user_id FROM sudo_users", fetch="all")
+    return [row[0] for row in res]
+
+# --- SUPPORT MANAGMENT ---
+
+async def is_support(user_id):
+    """Checks if a user has support privileges."""
+    res = await db_query("SELECT 1 FROM support_users WHERE user_id = ?", (int(user_id),), fetch="one")
+    return res is not None
+
+async def add_support(user_id):
+    """Grants support privileges to a user."""
+    await db_query("INSERT OR IGNORE INTO support_users (user_id) VALUES (?)", (int(user_id),), commit=True)
+
+async def remove_support(user_id):
+    """Revokes support privileges. Returns True if user was in the list."""
+    rowcount = await db_query("DELETE FROM support_users WHERE user_id = ?", (int(user_id),), commit=True)
+    return rowcount > 0
+
+async def get_all_supports():
+    """Returns a list of all support user IDs."""
+    res = await db_query("SELECT user_id FROM support_users", fetch="all")
     return [row[0] for row in res]
 
 # --- CHAT & FEDERATION LOOKUP ---

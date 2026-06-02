@@ -55,7 +55,7 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
         await query.delete_message()
         return
 
-    target_id, reason, supporter_id, chat_id, msg_id, req_type, thread_id = req
+    _, target_id, reason, supporter_id, chat_id, msg_id, req_type, thread_id, target_msg_id = req
     
     user_link = await utils.create_user_link(target_id, context)
     supporter_link = await utils.create_user_link(supporter_id, context)
@@ -80,7 +80,7 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
             await db.add_gban(target_id, supporter_id, reason)
             
             if req_type == "dgban":
-                try: await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+                try: await context.bot.delete_message(chat_id=chat_id, message_id=target_msg_id)
                 except: pass
 
             if await db.is_enforced(chat_id):
@@ -586,13 +586,14 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif is_support:
         request_id = f"d_{target_id}_{int(time.time())}"
 
-        spammer_msg_id = update.message.reply_to_message.message_id
+        cmd_id = update.effective_message.message_id
+        target_msg_id = update.message.reply_to_message.message_id
 
         await db.save_support_request(
             request_id, target_id, reason, admin.id, 
-            chat.id, spammer_msg_id, "dgban",
-            update.effective_message.message_thread_id
-        )
+            chat.id, cmd_id, "dgban",
+            update.effective_message.message_thread_id,
+            target_msg_id)
         
         keyboard = InlineKeyboardMarkup([[
             InlineKeyboardButton("Approve", callback_data=f"apr_{request_id}"),

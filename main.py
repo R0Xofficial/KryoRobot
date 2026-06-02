@@ -117,7 +117,7 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
                 else:
                     await context.bot.send_message(
                         chat_id=chat_id, text=feedback, parse_mode=ParseMode.HTML,
-                        reply_to_message_id=msg_id if req_type == "gban" else None
+                        reply_to_message_id=msg_id
                     )
             except:
                 try:

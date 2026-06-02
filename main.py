@@ -785,6 +785,8 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> Bot Owner")
     elif await db.is_sudo(target_id):
         msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> Bot Sudo")
+    elif await db.is_support(target_id):
+        msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> Bot Support")
     elif ban:
         msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n"
                f"<b>Status:</b> Banned\n"

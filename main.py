@@ -12,7 +12,7 @@ from telegram.error import Forbidden, BadRequest, RetryAfter, TimedOut
 from datetime import datetime, timezone
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode, ChatType, ChatMemberStatus
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ChatMemberHandler, ApplicationHandlerStop
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ChatMemberHandler, ApplicationHandlerStop, CallbackQueryHandler
 from telegram.request import HTTPXRequest
 
 from config import TOKEN, OWNER_ID, LOG_CHAT_ID, APPEAL_CHAT_USERNAME, DB_NAME

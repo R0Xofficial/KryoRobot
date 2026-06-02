@@ -38,7 +38,8 @@ def init_db():
                         admin_id INTEGER, 
                         chat_id INTEGER, 
                         msg_id INTEGER, 
-                        type TEXT)''')
+                        type TEXT,
+                        thread_id INTEGER)''')
         conn.commit()
 
 async def db_query(query, params=(), fetch=None, commit=False):
@@ -164,18 +165,15 @@ async def remove_chat(chat_id):
 
 # --- SUPPORT REQUEST ENGINE ---
 
-async def save_support_request(req_id, target_id, reason, admin_id, chat_id, msg_id, req_type):
-    """Persistently stores a gban/ungban request from a supporter."""
+async def save_support_request(req_id, target_id, reason, admin_id, chat_id, msg_id, req_type, thread_id=None):
     await db_query('''INSERT INTO support_requests 
-                      (request_id, target_id, reason, admin_id, chat_id, msg_id, type) 
-                      VALUES (?, ?, ?, ?, ?, ?, ?)''', 
-                   (req_id, int(target_id), reason, int(admin_id), int(chat_id), int(msg_id), req_type), 
+                      (request_id, target_id, reason, admin_id, chat_id, msg_id, type, thread_id) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', 
+                   (req_id, int(target_id), reason, int(admin_id), int(chat_id), int(msg_id), req_type, thread_id), 
                    commit=True)
 
 async def get_support_request(req_id):
-    """Fetches full details of a pending request by its ID."""
-    return await db_query('''SELECT target_id, reason, admin_id, chat_id, msg_id, type 
-                             FROM support_requests WHERE request_id = ?''', 
+    return await db_query("SELECT target_id, reason, admin_id, chat_id, msg_id, type, thread_id FROM support_requests WHERE request_id = ?", 
                           (req_id,), fetch="one")
 
 async def delete_support_request(req_id):

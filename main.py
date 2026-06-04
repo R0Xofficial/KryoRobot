@@ -501,12 +501,14 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         user_link = await utils.create_user_link(target_id, context)
         supporter_link = await utils.create_user_link(admin.id, context)
+        hashtag = "#GBANUPDATEREQUEST" if old_ban else "#GBANREQUEST"
         
-        req_msg = (f"<b>#GBANREQUEST</b>\n"
+        req_msg = (f"<b>{hashtag}</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
                    f"<b>Reason:</b> <code>{reason}</code>\n"
-                   f"<b>Admin:</b> {supporter_link} [<code>{admin.id}</code>]")
+        if old_ban: req_msg += f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>\n"
+        req_msg += f"<b>Admin:</b> {supporter_link} [<code>{admin.id}</code>]")
         
         if LOG_CHAT_ID:
             await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
@@ -604,11 +606,14 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_link = await utils.create_user_link(target_id, context)
         supporter_link = await utils.create_user_link(admin.id, context)
         
-        req_msg = (f"<b>#GBANREQUEST</b>\n"
+        hashtag = "#GBANUPDATEREQUEST" if old_ban else "#GBANREQUEST"
+        
+        req_msg = (f"<b>{hashtag}</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
                    f"<b>Reason:</b> <code>{reason}</code>\n"
-                   f"<b>Admin:</b> {supporter_link} [<code>{admin.id}</code>]")
+        if old_ban: req_msg += f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>\n"
+        req_msg += f"<b>Admin:</b> {supporter_link} [<code>{admin.id}</code>]")
         
         if LOG_CHAT_ID:
             await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)

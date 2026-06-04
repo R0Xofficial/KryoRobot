@@ -453,8 +453,9 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await utils.send_safe_reply(update, context, "Ok!")
 
+    old_ban = await db.get_gban(target_id)
+
     if is_sudo:
-        old_ban = await db.get_gban(target_id)
         if old_ban:
             if old_ban[0].strip() == reason.strip():
                 user_link = await utils.create_user_link(target_id, context)
@@ -549,8 +550,9 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await utils.send_safe_reply(update, context, "Ok!")
 
+    old_ban = await db.get_gban(target_id)
+    
     if is_sudo:
-        old_ban = await db.get_gban(target_id)
         if old_ban and old_ban[0].strip() == reason.strip():
             user_link = await utils.create_user_link(target_id, context)
             await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is already globally banned for the same reason.")

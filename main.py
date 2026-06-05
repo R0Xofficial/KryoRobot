@@ -924,7 +924,7 @@ async def enforce_gban_command(update: Update, context: ContextTypes.DEFAULT_TYP
     member = await chat.get_member(update.effective_user.id)
     is_sudo = await db.is_sudo(update.effective_user.id)
     if member.status != "creator" and not is_sudo:
-        await update.message.reply_text("Only the chat Creator can change this setting.")
+        await update.message.reply_text("Only the chat creator can change this setting.")
         return
 
     current_status = await db.is_enforced(chat.id)

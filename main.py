@@ -860,7 +860,7 @@ async def addsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if await db.get_gban(target_id):
         user_link = await utils.create_user_link(target_id, context)
-        await update.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>globally banned</b> and cannot be promoted.")
+        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>globally banned</b> and cannot be promoted.")
         return
 
     if await db.is_support(target_id):
@@ -1249,7 +1249,7 @@ async def addsupport_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     if await db.get_gban(target_id):
         user_link = await utils.create_user_link(target_id, context)
-        await update.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>globally banned</b> and cannot be promoted")
+        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>globally banned</b> and cannot be promoted")
         return
 
     if await db.is_sudo(target_id):

@@ -345,13 +345,13 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Issue a global ban.",
             "• <code>/dgban &lt;reply&gt; &lt;reason&gt;</code> - Issue a global ban and delete message.",
             "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Revoke a global ban.",
-            "• <code>/gbanstat &lt;target&gt;</code> - Check user's detailed ban info.\n"
+            "• <code>/gbanstat &lt;target&gt;</code> - Check user's detailed ban info.\n",
+            "• <code>/stats</code> - View database statistics.",
         ])
 
     if is_sudo:
         help_parts.extend([
             "<b>Sudo Commands:</b>",
-            "• <code>/stats</code> - View database statistics.",
             "• <code>/sudolist</code> - Show all bot sudos.",
             "• <code>/supportlist</code> - Show all bot support users.",
             "• <code>/leave</code> - Bot leaving current chat.\n"
@@ -362,6 +362,8 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "<b>Master Owner Commands:</b>",
             "• <code>/addsudo &lt;target&gt;</code> - Grant sudo privileges.",
             "• <code>/delsudo &lt;target&gt;</code> - Revoke sudo privileges.",
+            "• <code>/addsupport &lt;target&gt;</code> - Grant support privileges.",
+            "• <code>/delsupport &lt;target&gt;</code> - Revoke support privileges.",
             "• <code>/cleanup</code> - Remove inactive chats from database.",
             "• <code>/restart</code> - Restart bot process.",
             "• <code>/update</code> - Update bot from Git.",
@@ -953,7 +955,8 @@ async def enforce_gban_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
 @bot_command("stats")
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await db.is_sudo(update.effective_user.id): return
+    user = update.effective_user
+    if not await db.is_sudo(user.id) or db.is_support(user.id): return
     
     gbans = (await db.db_query("SELECT COUNT(*) FROM gbans", fetch="one"))[0]
     users = (await db.db_query("SELECT COUNT(*) FROM users", fetch="one"))[0]

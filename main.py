@@ -442,7 +442,7 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Who is the target of the command? The stars in the sky?"); return
     if not reason:
         await update.message.reply_text("Give a reason!"); return
-    if await db.is_sudo(target_id) or target_id == context.bot.id:
+    if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
         await update.message.reply_text("LoL, looks like... Someone tried gban privileged user. Nice Try."); return
 
     if chat.type == ChatType.PRIVATE:
@@ -537,7 +537,7 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg_text = update.effective_message.text_html
     reason = msg_text.split(None, 1)[1] if len(msg_text.split()) > 1 else None
 
-    if await db.is_sudo(target_id) or target_id == context.bot.id:
+    if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
         await update.message.reply_text("LoL, looks like... Someone tried gban privileged user. Nice Try."); return
     if not reason:
         await update.message.reply_text("Give a reason!"); return
@@ -652,7 +652,7 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Who is the target of the command? The stars in the sky?"); return
     if not reason:
         await update.message.reply_text("Give a reason!"); return
-    if await db.is_sudo(target_id) or target_id == context.bot.id:
+    if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
         await update.message.reply_text("Privileged users is never gbanned..."); return
 
     if not await db.get_gban(target_id):

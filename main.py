@@ -955,9 +955,8 @@ async def enforce_gban_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
 @bot_command("stats")
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if not await db.is_sudo(user.id): return
-    if not await db.is_support(user.id): return
+    if not await db.is_sudo(update.effective_user.id): return
+    if not await db.is_support(update.effective_user.id): return
     
     gbans = (await db.db_query("SELECT COUNT(*) FROM gbans", fetch="one"))[0]
     users = (await db.db_query("SELECT COUNT(*) FROM users", fetch="one"))[0]

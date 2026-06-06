@@ -858,6 +858,11 @@ async def addsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("You are already the Master Owner.")
         return
 
+    if await db.get_gban(target_id):
+        user_link = await utils.create_user_link(target_id, context)
+        await update.message.reply_text(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>globally banned</b> and cannot be promoted.")
+        return
+
     if await db.is_support(target_id):
         user_link = await utils.create_user_link(target_id, context)
         await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>already</b> support user.")
@@ -1242,12 +1247,16 @@ async def addsupport_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text("You are already the Master Owner.")
         return
 
+    if await db.get_gban(target_id):
+        user_link = await utils.create_user_link(target_id, context)
+        await update.message.reply_text(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>globally banned</b> and cannot be promoted")
+        return
+
     if await db.is_sudo(target_id):
         user_link = await utils.create_user_link(target_id, context)
         await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>already</b> sudo.")
         return
 
-    # Check if user is already in support
     if await db.is_support(target_id):
         user_link = await utils.create_user_link(target_id, context)
         await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>already</b> support user.")

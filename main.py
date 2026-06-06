@@ -345,8 +345,8 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Issue a global ban.",
             "• <code>/dgban &lt;reply&gt; &lt;reason&gt;</code> - Issue a global ban and delete message.",
             "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Revoke a global ban.",
-            "• <code>/gbanstat &lt;target&gt;</code> - Check user's detailed ban info.\n",
-            "• <code>/stats</code> - View database statistics.",
+            "• <code>/gbanstat &lt;target&gt;</code> - Check user's detailed ban info.",
+            "• <code>/stats</code> - View database statistics.\n",
         ])
 
     if is_sudo:

@@ -387,7 +387,7 @@ async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     message = await update.message.reply_text("Pinging...")
     end_time = time.time()
-    latency = round((end_time - start_time) * 1000, 2)
+    latency = round((end_time - start_time) * 100, 2)
     
     await message.edit_text(
         f"<b>Pong!</b>\n"

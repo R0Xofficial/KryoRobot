@@ -177,3 +177,11 @@ async def get_support_request(req_id):
 async def delete_support_request(req_id):
     """Removes a request from the database once processed or declined."""
     await db_query("DELETE FROM support_requests WHERE request_id = ?", (req_id,), commit=True)
+
+async def import_gban(user_id, reason):
+    date_str = utils.get_utc_now()
+    await db_query(
+        "INSERT OR IGNORE INTO gbans (user_id, reason, admin_id, date) VALUES (?, ?, ?, ?)",
+        (int(user_id), reason, 0, date_str),
+        commit=True
+    )

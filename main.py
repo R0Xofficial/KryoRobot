@@ -1116,7 +1116,7 @@ async def update_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != OWNER_ID:
         return
 
-    msg = await utils.send_safe_reply(update, context, "Checking updates...", parse_mode=ParseMode.HTML)
+    msg = await utils.send_safe_reply(update, context, "Checking updates...")
 
     try:
         pull_result = subprocess.check_output(["git", "pull"]).decode("utf-8")

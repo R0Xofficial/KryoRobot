@@ -834,7 +834,7 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                f"<b>Reason:</b> <code>{utils.safe_escape(ban[0])}</code>\n<b>Date:</b> <code>{ban[2]}</code>\n")
         if sudo:
             if ban[1] == 0:
-                msg += f"<b>Admin:</b> Imported ban"
+                msg += f"<b>Admin:</b> This ban is inported."
             else:
                 a_link = await utils.create_user_link(ban[1], context)
                 msg += f"<b>Admin:</b> {a_link} [<code>{ban[1]}</code>]"

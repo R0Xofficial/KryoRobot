@@ -1342,10 +1342,10 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
     document = msg.document or (msg.reply_to_message.document if msg.reply_to_message else None)
 
     if not document or not document.file_name.endswith('.json'):
-        await msg.reply_text("❌ Please reply to a valid <code>.json</code> file.", parse_mode=ParseMode.HTML)
+        await msg.reply_text("Please reply to a valid <code>.json</code> file.", parse_mode=ParseMode.HTML)
         return
 
-    status_msg = await msg.reply_text("⏳ <b>Processing file...</b>")
+    status_msg = await msg.reply_text("Processing...")
 
     # Path for temporary storage
     temp_path = "import_temp.json"
@@ -1382,7 +1382,7 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
         # 3. Mass Insert with precision counting
         count = 0
         if bans_to_add:
-            count = await db.import_many_gbans(bans_to_add)
+            count = await db.import_gbans(bans_to_add)
 
         # 4. Final log (Identity 1:1)
         final_message = (f"<b>Import Bans Successful!</b>\n"

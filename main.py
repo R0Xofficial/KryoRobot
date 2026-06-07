@@ -1334,6 +1334,7 @@ async def supportlist_cmd(update, context):
 
 @bot_command("importbans")
 async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Imports gbans from Rose JSONL file and counts new entries only."""
     if update.effective_user.id != OWNER_ID:
         return
 
@@ -1341,52 +1342,64 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
     document = msg.document or (msg.reply_to_message.document if msg.reply_to_message else None)
 
     if not document or not document.file_name.endswith('.json'):
-        await msg.reply_text("Please reply to the <code>.json</code> file.", parse_mode=ParseMode.HTML)
+        await msg.reply_text("❌ Please reply to a valid <code>.json</code> file.", parse_mode=ParseMode.HTML)
         return
 
-    status_msg = await msg.reply_text("Importing bans...")
+    status_msg = await msg.reply_text("⏳ <b>Processing file...</b>")
 
-    added_count = 0
+    # Path for temporary storage
+    temp_path = "import_temp.json"
 
     try:
-        # 1. Download file content
-        tg_file = await context.bot.get_file(document.file_id)
-        content = await tg_file.download_as_bytearray()
+        # 1. Download file to disk
+        file_info = await context.bot.get_file(document.file_id)
+        await file_info.download_to_drive(temp_path)
         
-        # 2. Parse all lines into a list
         bans_to_add = []
         date_str = utils.get_utc_now()
-        lines = content.decode('utf-8').splitlines()
-        
-        for line in lines:
-            try:
-                data = json.loads(line)
-                u_id = data.get("user_id")
-                raw_reason = data.get("reason", "Imported ban.")
+
+        # 2. Parse file line by line
+        with open(temp_path, 'r', encoding='utf-8', errors='ignore') as f:
+            for line in f:
+                line = line.strip()
+                if not line: continue
                 
-                # Filter: Only positive IDs and real IDs
-                if u_id and int(u_id) > 0:
-                    clean_reason = str(raw_reason).replace('\n', ' ').replace('\\n', ' ')
-                    clean_reason = " ".join(clean_reason.split())
+                try:
+                    data = json.loads(line)
+                    u_id = data.get("user_id")
+                    raw_reason = data.get("reason", "Imported ban")
                     
-                    # Prepare tuple: (user_id, reason, admin_id, date)
-                    if await db.import_gban(u_id, clean_reason):
-                        added_count += 1
-            except:
-                continue
+                    # Security filter: only positive IDs
+                    if u_id and int(u_id) > 0:
+                        # CLEAN REASON: replace \n with space and trim
+                        clean_reason = str(raw_reason).replace('\n', ' ').replace('\\n', ' ')
+                        clean_reason = " ".join(clean_reason.split())
+                        
+                        bans_to_add.append((int(u_id), clean_reason, 0, date_str))
+                except:
+                    continue
 
-        # 4. Final log
-        message = (f"<b>Import Bans Successful!</b>\n"
-                   f"Added <code>{added_count}</code> new bans to the database.")
+        # 3. Mass Insert with precision counting
+        count = 0
+        if bans_to_add:
+            count = await db.import_many_gbans(bans_to_add)
 
-        await status_msg.edit_text(message, parse_mode=ParseMode.HTML)
+        # 4. Final log (Identity 1:1)
+        final_message = (f"<b>Import Bans Successful!</b>\n"
+                         f"Added <code>{count}</code> new bans to the database.")
+
+        await status_msg.edit_text(final_message, parse_mode=ParseMode.HTML)
         
         if LOG_CHAT_ID:
-            await context.bot.send_message(LOG_CHAT_ID, message, parse_mode=ParseMode.HTML)
+            await context.bot.send_message(LOG_CHAT_ID, final_message, parse_mode=ParseMode.HTML)
 
     except Exception as e:
-        logger.error(f"Mass import failed: {e}")
-        await status_msg.edit_text(f"<b>Error:</b> <code>{str(e)}</code>", parse_mode=ParseMode.HTML)
+        logger.error(f"Import failed: {e}")
+        await status_msg.edit_text(f"💥 <b>Error:</b> <code>{str(e)}</code>", parse_mode=ParseMode.HTML)
+    finally:
+        # Cleanup temp file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 # --- main.py ---
 

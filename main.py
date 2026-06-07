@@ -8,6 +8,7 @@ import sys
 import subprocess
 import aiosqlite
 import telegram
+import json
 from telegram.error import Forbidden, BadRequest, RetryAfter, TimedOut
 from datetime import datetime, timezone
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -831,9 +832,11 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                f"<b>Status:</b> Banned\n"
                f"<b>Reason:</b> <code>{utils.safe_escape(ban[0])}</code>\n<b>Date:</b> <code>{ban[2]}</code>\n")
         if sudo:
-            a_link = await utils.create_user_link(ban[1], context)
-            msg += f"<b>Banned By:</b> {a_link} [<code>{ban[1]}</code>]"
-        else: msg += f"<b>Appeal Chat:</b> {APPEAL_CHAT_USERNAME}"
+            if ban[1] == 0:
+                msg += f"<b>Admin:</b> Imported ban"
+            else:
+                a_link = await utils.create_user_link(ban[1], context)
+                msg += f"<b>Admin:</b> {a_link} [<code>{ban[1]}</code>]"
     else: msg = f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> Not Banned"
     await utils.send_safe_reply(update, context, msg)
 
@@ -1327,6 +1330,49 @@ async def supportlist_cmd(update, context):
         msg += f"• {u_link} [<code>{s_id}</code>]\n"
     
     await utils.send_safe_reply(update, context, msg)
+
+@bot_command("import")
+async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != OWNER_ID:
+        return
+
+    message = update.effective_message
+    document = message.document or (message.reply_to_message.document if message.reply_to_message else None)
+
+    if not document or not document.file_name.endswith('.json'):
+        await message.reply_text("Please reply to the <code>.json</code> file.", parse_mode=ParseMode.HTML)
+        return
+
+    status_msg = await message.reply_text("Importing...", parse_mode=ParseMode.HTML)
+
+    try:
+        tg_file = await context.bot.get_file(document.file_id)
+        content = await tg_file.download_as_bytearray()
+        
+        count = 0
+        lines = content.decode('utf-8').splitlines()
+        for line in lines:
+            try:
+                data = json.loads(line)
+                u_id = data.get("user_id")
+                reason = data.get("reason", "No reason provided in import.")
+                
+                if u_id:
+                    await db.import_gban(u_id, reason)
+                    count += 1
+            except:
+                continue
+
+        message = (f"<b>Import Bans Successful!</b>\n"
+                   f"Added <code>{count}</code> new bans to the database.")
+
+        await status_msg.edit_text(message, parse_mode=ParseMode.HTML)
+        if LOG_CHAT_ID:
+            await context.bot.send_message(LOG_CHAT_ID, message, parse_mode=ParseMode.HTML)
+
+    except Exception as e:
+        logger.error(f"Import failed: {e}")
+        await status_msg.edit_text(f"<b>Error:</b> <code>{str(e)}</code>", parse_mode=ParseMode.HTML)
 
 # --- main.py ---
 

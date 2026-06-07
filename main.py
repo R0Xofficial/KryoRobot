@@ -1368,15 +1368,10 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
                     clean_reason = " ".join(clean_reason.split())
                     
                     # Prepare tuple: (user_id, reason, admin_id, date)
-                    bans_to_add.append((int(u_id), clean_reason, 0, date_str))
+                    if await db.import_gban(u_id, clean_reason):
+                        added_count += 1
             except:
                 continue
-
-        # 3. Execute mass import in ONE database transaction
-        if bans_to_add:
-            added_count = await db.import_gban(bans_to_add)
-        else:
-            added_count = 0
 
         # 4. Final log
         message = (f"<b>Import Bans Successful!</b>\n"

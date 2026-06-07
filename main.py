@@ -1346,6 +1346,8 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
     status_msg = await msg.reply_text("Importing bans...")
 
+    added_count = 0
+
     try:
         # 1. Download file content
         tg_file = await context.bot.get_file(document.file_id)

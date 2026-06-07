@@ -1334,7 +1334,6 @@ async def supportlist_cmd(update, context):
 
 @bot_command("importbans")
 async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Imports gbans from Rose JSONL file and counts new entries only."""
     if update.effective_user.id != OWNER_ID:
         return
 
@@ -1347,18 +1346,15 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
     status_msg = await msg.reply_text("Processing...")
 
-    # Path for temporary storage
     temp_path = "import_temp.json"
 
     try:
-        # 1. Download file to disk
         file_info = await context.bot.get_file(document.file_id)
         await file_info.download_to_drive(temp_path)
         
         bans_to_add = []
         date_str = utils.get_utc_now()
 
-        # 2. Parse file line by line
         with open(temp_path, 'r', encoding='utf-8', errors='ignore') as f:
             for line in f:
                 line = line.strip()
@@ -1367,11 +1363,9 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
                 try:
                     data = json.loads(line)
                     u_id = data.get("user_id")
-                    raw_reason = data.get("reason", "Imported ban")
+                    raw_reason = data.get("reason", "No reason given.")
                     
-                    # Security filter: only positive IDs
                     if u_id and int(u_id) > 0:
-                        # CLEAN REASON: replace \n with space and trim
                         clean_reason = str(raw_reason).replace('\n', ' ').replace('\\n', ' ')
                         clean_reason = " ".join(clean_reason.split())
                         
@@ -1379,12 +1373,10 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
                 except:
                     continue
 
-        # 3. Mass Insert with precision counting
         count = 0
         if bans_to_add:
             count = await db.import_gbans(bans_to_add)
 
-        # 4. Final log (Identity 1:1)
         final_message = (f"<b>Import Bans Successful!</b>\n"
                          f"Added <code>{count}</code> new bans to the database.")
 
@@ -1395,9 +1387,8 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
     except Exception as e:
         logger.error(f"Import failed: {e}")
-        await status_msg.edit_text(f"💥 <b>Error:</b> <code>{str(e)}</code>", parse_mode=ParseMode.HTML)
+        await status_msg.edit_text(f"<b>Error:</b> <code>{str(e)}</code>", parse_mode=ParseMode.HTML)
     finally:
-        # Cleanup temp file
         if os.path.exists(temp_path):
             os.remove(temp_path)
 

@@ -369,7 +369,8 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• <code>/restart</code> - Restart bot process.",
             "• <code>/update</code> - Update bot from Git.",
             "• <code>/restore</code> - Restore database from file.",
-            "• <code>/backup</code> - Get the latest database file.\n"
+            "• <code>/backup</code> - Get the latest database file.",
+            "• <code>/importbans</code> - Import bans from json file to bot database.\n"
         ])
 
     help_parts.append("<i>You can use '/' or '!' as a prefix for all commands.</i>")
@@ -1331,42 +1332,55 @@ async def supportlist_cmd(update, context):
     
     await utils.send_safe_reply(update, context, msg)
 
-@bot_command("import")
+@bot_command("importbans")
 async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != OWNER_ID:
         return
 
-    message = update.effective_message
-    document = message.document or (message.reply_to_message.document if message.reply_to_message else None)
+    msg = update.effective_message
+    # Check if we are replying to a file
+    document = msg.document or (msg.reply_to_message.document if msg.reply_to_message else None)
 
     if not document or not document.file_name.endswith('.json'):
-        await message.reply_text("Please reply to the <code>.json</code> file.", parse_mode=ParseMode.HTML)
+        await msg.reply_text("❌ Please reply to the <code>.json</code> file.", parse_mode=ParseMode.HTML)
         return
 
-    status_msg = await message.reply_text("Importing...", parse_mode=ParseMode.HTML)
+    status_msg = await msg.reply_text("⏳ <b>Importing...</b>", parse_mode=ParseMode.HTML)
 
     try:
+        # Download the file
         tg_file = await context.bot.get_file(document.file_id)
         content = await tg_file.download_as_bytearray()
         
         count = 0
         lines = content.decode('utf-8').splitlines()
+        
         for line in lines:
+            line = line.strip()
+            if not line: continue
+            
             try:
                 data = json.loads(line)
                 u_id = data.get("user_id")
-                reason = data.get("reason", "No reason provided in import.")
+                raw_reason = data.get("reason", "Imported ban.")
                 
                 if u_id:
-                    await db.import_gban(u_id, reason)
-                    count += 1
+                    # CLEANUP: Replace \n and escaped \\n with space
+                    clean_reason = str(raw_reason).replace('\n', ' ').replace('\\n', ' ')
+                    # Remove extra spaces inside text
+                    clean_reason = " ".join(clean_reason.split())
+
+                    # Import to database (admin_id 0)
+                    if await db.import_gban(u_id, clean_reason):
+                        count += 1
             except:
                 continue
-
+                
         message = (f"<b>Import Bans Successful!</b>\n"
                    f"Added <code>{count}</code> new bans to the database.")
 
         await status_msg.edit_text(message, parse_mode=ParseMode.HTML)
+        
         if LOG_CHAT_ID:
             await context.bot.send_message(LOG_CHAT_ID, message, parse_mode=ParseMode.HTML)
 

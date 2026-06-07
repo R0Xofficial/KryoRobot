@@ -178,11 +178,22 @@ async def delete_support_request(req_id):
     """Removes a request from the database once processed or declined."""
     await db_query("DELETE FROM support_requests WHERE request_id = ?", (req_id,), commit=True)
 
-async def import_gban(user_id, reason):
+async def import_gbans(ban_list):
+    added_count = 0
     async with aiosqlite.connect(DB_NAME) as conn:
-        cursor = await conn.executemany(
-            "INSERT OR IGNORE INTO gbans (user_id, reason, admin_id, date) VALUES (?, ?, ?, ?)",
-            ban_list
-        )
-        await conn.commit()
-        return cursor.rowcount
+        # We start a manual transaction for speed
+        await conn.execute("BEGIN TRANSACTION")
+        try:
+            for ban in ban_list:
+                # ban = (user_id, reason, admin_id, date)
+                cursor = await conn.execute(
+                    "INSERT OR IGNORE INTO gbans (user_id, reason, admin_id, date) VALUES (?, ?, ?, ?)",
+                    ban
+                )
+                # rowcount will be 1 if inserted, 0 if ignored (duplicate)
+                added_count += cursor.rowcount
+            await conn.commit()
+        except Exception as e:
+            await conn.execute("ROLLBACK")
+            raise e
+    return added_count

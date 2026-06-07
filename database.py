@@ -39,7 +39,7 @@ def init_db():
                         chat_id INTEGER, 
                         msg_id INTEGER, 
                         type TEXT,
-                        thread_id,
+                        thread_id INTEGER,
                         target_msg_id INTEGER)''')
         conn.commit()
 

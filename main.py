@@ -1349,6 +1349,11 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
     temp_path = "import_temp.json"
 
     try:
+        sudos = await db.get_all_sudos()
+        supports = await db.get_all_supports()
+        protected_users = set(sudos) | set(supports)
+        protected_users.add(OWNER_ID)
+        
         file_info = await context.bot.get_file(document.file_id)
         await file_info.download_to_drive(temp_path)
         
@@ -1366,6 +1371,9 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
                     raw_reason = data.get("reason", "No reason given.")
                     
                     if u_id and int(u_id) > 0:
+                        if int(u_id) in protected_users:
+                            continue
+                            
                         clean_reason = str(raw_reason).replace('\n', ' ').replace('\\n', ' ')
                         clean_reason = " ".join(clean_reason.split())
                         

@@ -834,7 +834,7 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                f"<b>Reason:</b> <code>{utils.safe_escape(ban[0])}</code>\n<b>Date:</b> <code>{ban[2]}</code>\n")
         if sudo:
             if ban[1] == 0:
-                msg += f"<b>Admin:</b> This ban is inported."
+                msg += f"<b>Admin:</b> This ban is imported."
             else:
                 a_link = await utils.create_user_link(ban[1], context)
                 msg += f"<b>Admin:</b> {a_link} [<code>{ban[1]}</code>]"
@@ -1344,7 +1344,7 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
         await msg.reply_text("Please reply to a valid <code>.json</code> file.", parse_mode=ParseMode.HTML)
         return
 
-    status_msg = await msg.reply_text("Processing...")
+    status_msg = await msg.reply_text("Importing bans... Please wait!")
 
     temp_path = "import_temp.json"
 

@@ -179,10 +179,10 @@ async def delete_support_request(req_id):
     await db_query("DELETE FROM support_requests WHERE request_id = ?", (req_id,), commit=True)
 
 async def import_gban(user_id, reason):
-    date_str = utils.get_utc_now()
-    rowcount = await db.db_query(
-        "INSERT OR IGNORE INTO gbans (user_id, reason, admin_id, date) VALUES (?, ?, ?, ?)",
-        (int(user_id), reason, 0, date_str),
-        commit=True
-    )
-    return rowcount > 0
+    async with aiosqlite.connect(DB_NAME) as conn:
+        cursor = await conn.executemany(
+            "INSERT OR IGNORE INTO gbans (user_id, reason, admin_id, date) VALUES (?, ?, ?, ?)",
+            ban_list
+        )
+        await conn.commit()
+        return cursor.rowcount

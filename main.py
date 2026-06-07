@@ -1344,40 +1344,51 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
         await msg.reply_text("Please reply to the <code>.json</code> file.", parse_mode=ParseMode.HTML)
         return
 
-    status_msg = await msg.reply_text("Importing...", parse_mode=ParseMode.HTML)
+    status_msg = await msg.reply_text("Importing bans...")
 
     try:
+        # 1. Download file content
         tg_file = await context.bot.get_file(document.file_id)
         content = await tg_file.download_as_bytearray()
         
-        count = 0
+        # 2. Parse all lines into a list
+        bans_to_add = []
+        date_str = utils.get_utc_now()
         lines = content.decode('utf-8').splitlines()
         
         for line in lines:
-            line = line.strip()
-            if not line: continue
-            
             try:
                 data = json.loads(line)
                 u_id = data.get("user_id")
                 raw_reason = data.get("reason", "Imported ban.")
                 
+                # Filter: Only positive IDs and real IDs
                 if u_id and int(u_id) > 0:
                     clean_reason = str(raw_reason).replace('\n', ' ').replace('\\n', ' ')
                     clean_reason = " ".join(clean_reason.split())
-
-                    if await db.import_gban(u_id, clean_reason):
-                        count += 1
+                    
+                    # Prepare tuple: (user_id, reason, admin_id, date)
+                    bans_to_add.append((int(u_id), clean_reason, 0, date_str))
             except:
                 continue
 
+        # 3. Execute mass import in ONE database transaction
+        if bans_to_add:
+            added_count = await db.import_gban(bans_to_add)
+        else:
+            added_count = 0
+
+        # 4. Final log
         message = (f"<b>Import Bans Successful!</b>\n"
-                   f"Added <code>{count}</code> new bans to the database.")
+                   f"Added <code>{added_count}</code> new bans to the database.")
 
         await status_msg.edit_text(message, parse_mode=ParseMode.HTML)
         
+        if LOG_CHAT_ID:
+            await context.bot.send_message(LOG_CHAT_ID, message, parse_mode=ParseMode.HTML)
+
     except Exception as e:
-        logger.error(f"Import failed: {e}")
+        logger.error(f"Mass import failed: {e}")
         await status_msg.edit_text(f"<b>Error:</b> <code>{str(e)}</code>", parse_mode=ParseMode.HTML)
 
 # --- main.py ---

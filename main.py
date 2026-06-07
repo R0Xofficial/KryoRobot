@@ -381,13 +381,13 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await utils.send_safe_reply(update, context, final_text)
     except Exception as e:
         logger.error(f"Help HTML Error: {e}")
-        await update.message.reply_text("Error: There is a formatting issue in the help message.")
+        await utils.send_safe_reply(update, context, "Error: There is a formatting issue in the help message.")
 
 @bot_command("ping")
 async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     start_time = time.time()
     
-    message = await update.message.reply_text("Pinging...")
+    message = await utils.send_safe_reply(update, context, "Pinging...")
     end_time = time.time()
     latency = round((end_time - start_time) * 100, 2)
     
@@ -436,16 +436,16 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif context.args:
         target_id, err = await utils.resolve_id(update, context, context.args[0])
         if err: 
-            await update.message.reply_text(err)
+            await utils.send_safe_reply(update, context, err)
             return
         reason = " ".join(context.args[1:]) if len(context.args) > 1 else None
 
     if not target_id:
-        await update.message.reply_text("Who is the target of the command? The stars in the sky?"); return
+        await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?"); return
     if not reason:
-        await update.message.reply_text("Give a reason!"); return
+        await utils.send_safe_reply(update, context, "Give a reason!"); return
     if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
-        await update.message.reply_text("LoL, looks like... Someone tried gban privileged user. Nice Try."); return
+        await utils.send_safe_reply(update, context, "LoL, looks like... Someone tried gban privileged user. Nice Try."); return
 
     if chat.type == ChatType.PRIVATE:
         chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
@@ -518,7 +518,7 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if LOG_CHAT_ID:
             await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
         
-        await update.message.reply_text("Request Sended.")
+        await utils.send_safe_reply(update, context, "Request Sended.")
 
 @bot_command("dgban")
 async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -532,7 +532,7 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if not update.message.reply_to_message or update.message.reply_to_message.forum_topic_created:
-        await update.message.reply_text("Who is the target of the command? The stars in the sky?")
+        await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?")
         return
 
     target_id = update.message.reply_to_message.from_user.id
@@ -540,9 +540,9 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reason = msg_text.split(None, 1)[1] if len(msg_text.split()) > 1 else None
 
     if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
-        await update.message.reply_text("LoL, looks like... Someone tried gban privileged user. Nice Try."); return
+        await utils.send_safe_reply(update, context, "LoL, looks like... Someone tried gban privileged user. Nice Try."); return
     if not reason:
-        await update.message.reply_text("Give a reason!"); return
+        await utils.send_safe_reply(update, context, "Give a reason!"); return
 
     if chat.type == ChatType.PRIVATE:
             chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
@@ -624,7 +624,7 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if LOG_CHAT_ID:
             await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
         
-        await update.message.reply_text("Request Sended.")
+        await utils.send_safe_reply(update, context, "Request Sended.")
 
 @bot_command("ungban")
 async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -646,16 +646,16 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif context.args:
         target_id, err = await utils.resolve_id(update, context, context.args[0])
         if err: 
-            await update.message.reply_text(err)
+            await utils.send_safe_reply(update, context, err)
             return
         reason = " ".join(context.args[1:]) if len(context.args) > 1 else None
 
     if not target_id:
-        await update.message.reply_text("Who is the target of the command? The stars in the sky?"); return
+        await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?"); return
     if not reason:
-        await update.message.reply_text("Give a reason!"); return
+        await utils.send_safe_reply(update, context, "Give a reason!"); return
     if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
-        await update.message.reply_text("Privileged users is never gbanned..."); return
+        await utils.send_safe_reply(update, context, "Privileged users is never gbanned..."); return
 
     if not await db.get_gban(target_id):
         user_link = await utils.create_user_link(target_id, context)
@@ -726,7 +726,7 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if LOG_CHAT_ID:
             await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
         
-        await update.message.reply_text("Request Sended.")
+        await utils.send_safe_reply(update, context, "Request Sended.")
 
 async def propagate_unban(context: ContextTypes.DEFAULT_TYPE):
     start_time = time.time()
@@ -852,14 +852,14 @@ async def addsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif context.args:
         target_id, err = await utils.resolve_id(update, context, context.args[0])
         if err: 
-            await update.message.reply_text(err)
+            await utils.send_safe_reply(update, context, err)
             return
             
     if not target_id:
-        await update.message.reply_text("Who is the target of the command? The stars in the sky?")
+        await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?")
         return
     if target_id == OWNER_ID:
-        await update.message.reply_text("You are already the Master Owner.")
+        await utils.send_safe_reply(update, context, "You are already the Master Owner.")
         return
 
     if await db.get_gban(target_id):
@@ -900,15 +900,15 @@ async def delsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif context.args:
         target_id, err = await utils.resolve_id(update, context, context.args[0])
         if err: 
-            await update.message.reply_text(err)
+            await utils.send_safe_reply(update, context, err)
             return
             
     if not target_id:
-        await update.message.reply_text("Who is the target of the command? The stars in the sky?")
+        await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?")
         return
 
     if target_id == OWNER_ID:
-        await update.message.reply_text("LoL... You cannot remove yourself.")
+        await utils.send_safe_reply(update, context, "LoL... You cannot remove yourself.")
         return
 
     if await db.remove_sudo(target_id):
@@ -923,19 +923,19 @@ async def delsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if LOG_CHAT_ID:
             await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
     else:
-        await update.message.reply_text("This user was not in the Sudo list.")
+        await utils.send_safe_reply(update, context, "This user was not in the Sudo list.")
 
 @bot_command("enforcegban")
 async def enforce_gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat = update.effective_chat
     if not chat or chat.type == ChatType.PRIVATE:
-        await update.message.reply_text("This command can only be used on a group.")
+        await utils.send_safe_reply(update, context, "This command can only be used on a group.")
         return
     
     member = await chat.get_member(update.effective_user.id)
     is_sudo = await db.is_sudo(update.effective_user.id)
     if member.status != "creator" and not is_sudo:
-        await update.message.reply_text("Only the chat creator can change this setting.")
+        await utils.send_safe_reply(update, context, "Only the chat creator can change this setting.")
         return
 
     current_status = await db.is_enforced(chat.id)
@@ -989,16 +989,16 @@ async def backup_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         with open(DB_NAME, 'rb') as f:
             await context.bot.send_document(OWNER_ID, document=f, caption=f"Database Backup: {curr_time}")
-        await update.message.reply_text("Backup sent to your PM.")
+        await utils.send_safe_reply(update, context, "Backup sent to your PM.")
     except Exception as e:
-        await update.message.reply_text(f"Error: {e}")
+        await utils.send_safe_reply(update, context, f"Error: {e}")
 
 @bot_command("cleanup")
 async def cleanup_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != OWNER_ID: 
         return
 
-    status_msg = await update.message.reply_text("Starting chat database cleanup...")
+    status_msg = await utils.send_safe_reply(update, context, "Starting chat database cleanup...")
     
     chats = await db.db_query("SELECT chat_id FROM bot_chats", fetch="all")
 
@@ -1098,7 +1098,7 @@ async def sudolist_cmd(update, context):
     
     sudos = await db.get_all_sudos()
     if not sudos:
-        await update.message.reply_text("The Sudo list is empty.")
+        await utils.send_safe_reply(update, context, "The Sudo list is empty.")
         return
 
     msg = "<b>Sudo Privileged Users:</b>\n\n"
@@ -1116,7 +1116,7 @@ async def update_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != OWNER_ID:
         return
 
-    msg = await update.message.reply_text("Checking updates...", parse_mode=ParseMode.HTML)
+    msg = await utils.send_safe_reply(update, context, "Checking updates...", parse_mode=ParseMode.HTML)
 
     try:
         pull_result = subprocess.check_output(["git", "pull"]).decode("utf-8")
@@ -1158,13 +1158,13 @@ async def leave_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if update.effective_chat.type == ChatType.PRIVATE:
-        await update.message.reply_text("I can only leave groups.")
+        await utils.send_safe_reply(update, context, "I can only leave groups.")
         return
 
     chat_id = update.effective_chat.id
 
     try:
-        await update.message.reply_text("Farewell! My duties here are finished. 🫡")
+        await utils.send_safe_reply(update, context, "Farewell! My duties here are finished. 🫡")
         
         await db.remove_chat(chat_id)
         await context.bot.leave_chat(chat_id)
@@ -1241,14 +1241,14 @@ async def addsupport_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     elif context.args:
         target_id, err = await utils.resolve_id(update, context, context.args[0])
         if err: 
-            await update.message.reply_text(err)
+            await utils.send_safe_reply(update, context, err)
             return
             
     if not target_id:
-        await update.message.reply_text("Who is the target of the command? The stars in the sky?")
+        await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?")
         return
     if target_id == OWNER_ID:
-        await update.message.reply_text("You are already the Master Owner.")
+        await utils.send_safe_reply(update, context, "You are already the Master Owner.")
         return
 
     if await db.get_gban(target_id):
@@ -1289,15 +1289,15 @@ async def delsupport_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     elif context.args:
         target_id, err = await utils.resolve_id(update, context, context.args[0])
         if err: 
-            await update.message.reply_text(err)
+            await utils.send_safe_reply(update, context, err)
             return
             
     if not target_id:
-        await update.message.reply_text("Who is the target of the command? The stars in the sky?")
+        await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?")
         return
 
     if target_id == OWNER_ID:
-        await update.message.reply_text("LoL... You cannot remove yourself.")
+        await utils.send_safe_reply(update, context, "LoL... You cannot remove yourself.")
         return
 
     if await db.remove_support(target_id):
@@ -1312,7 +1312,7 @@ async def delsupport_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         if LOG_CHAT_ID:
             await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
     else:
-        await update.message.reply_text("This user was not in the Support list.")
+        await utils.send_safe_reply(update, context, "This user was not in the Support list.")
 
 @bot_command(["supportlist", "supports"])
 async def supportlist_cmd(update, context):
@@ -1321,7 +1321,7 @@ async def supportlist_cmd(update, context):
     
     supports = await db.get_all_supports()
     if not supports:
-        await update.message.reply_text("The Support list is empty.")
+        await utils.send_safe_reply(update, context, "The Support list is empty.")
         return
 
     msg = "<b>Support Team Members:</b>\n\n"

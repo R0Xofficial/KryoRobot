@@ -446,6 +446,9 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await utils.send_safe_reply(update, context, "Give a reason!"); return
     if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
         await utils.send_safe_reply(update, context, "LoL, looks like... Someone tried gban privileged user. Nice Try."); return
+    if utils.is_immune(target_id):
+        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
+        return
 
     if chat.type == ChatType.PRIVATE:
         chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
@@ -539,10 +542,13 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg_text = update.effective_message.text_html
     reason = msg_text.split(None, 1)[1] if len(msg_text.split()) > 1 else None
 
-    if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
-        await utils.send_safe_reply(update, context, "LoL, looks like... Someone tried gban privileged user. Nice Try."); return
     if not reason:
         await utils.send_safe_reply(update, context, "Give a reason!"); return
+    if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
+        await utils.send_safe_reply(update, context, "LoL, looks like... Someone tried gban privileged user. Nice Try."); return
+    if utils.is_immune(target_id):
+        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
+        return
 
     if chat.type == ChatType.PRIVATE:
             chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
@@ -656,6 +662,9 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await utils.send_safe_reply(update, context, "Give a reason!"); return
     if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
         await utils.send_safe_reply(update, context, "Privileged users is never gbanned..."); return
+    if utils.is_immune(target_id):
+        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
+        return
 
     if not await db.get_gban(target_id):
         user_link = await utils.create_user_link(target_id, context)
@@ -813,6 +822,10 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await utils.send_safe_reply(update, context, error_msg)
         return
 
+    if utils.is_immune(target_id):
+        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
+        return
+    
     if not target_id:
         target_id = user.id
         checking_self = True
@@ -862,6 +875,10 @@ async def addsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await utils.send_safe_reply(update, context, "You are already the Master Owner.")
         return
 
+    if utils.is_immune(target_id):
+        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
+        return
+
     if await db.get_gban(target_id):
         user_link = await utils.create_user_link(target_id, context)
         await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>globally banned</b> and cannot be promoted.")
@@ -909,6 +926,10 @@ async def delsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if target_id == OWNER_ID:
         await utils.send_safe_reply(update, context, "LoL... You cannot remove yourself.")
+        return
+
+    if utils.is_immune(target_id):
+        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
         return
 
     if await db.remove_sudo(target_id):
@@ -1251,6 +1272,10 @@ async def addsupport_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await utils.send_safe_reply(update, context, "You are already the Master Owner.")
         return
 
+    if utils.is_immune(target_id):
+        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
+        return
+
     if await db.get_gban(target_id):
         user_link = await utils.create_user_link(target_id, context)
         await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>globally banned</b> and cannot be promoted")
@@ -1298,6 +1323,10 @@ async def delsupport_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     if target_id == OWNER_ID:
         await utils.send_safe_reply(update, context, "LoL... You cannot remove yourself.")
+        return
+
+    if utils.is_immune(target_id):
+        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
         return
 
     if await db.remove_support(target_id):
@@ -1349,9 +1378,10 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
     temp_path = "import_temp.json"
 
     try:
+        from exceptions import IMMUNE_IDS
         sudos = await db.get_all_sudos()
         supports = await db.get_all_supports()
-        protected_users = set(sudos) | set(supports)
+        protected_users = set(sudos) | set(supports) | set(IMMUNE_IDS)
         protected_users.add(OWNER_ID)
         
         file_info = await context.bot.get_file(document.file_id)

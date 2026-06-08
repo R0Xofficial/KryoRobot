@@ -447,7 +447,7 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
         await utils.send_safe_reply(update, context, "LoL, looks like... Someone tried gban privileged user. Nice Try."); return
     if utils.is_immune(target_id):
-        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
+        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
         return
 
     if chat.type == ChatType.PRIVATE:
@@ -547,7 +547,7 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
         await utils.send_safe_reply(update, context, "LoL, looks like... Someone tried gban privileged user. Nice Try."); return
     if utils.is_immune(target_id):
-        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
+        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
         return
 
     if chat.type == ChatType.PRIVATE:
@@ -663,7 +663,7 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
         await utils.send_safe_reply(update, context, "Privileged users is never gbanned..."); return
     if utils.is_immune(target_id):
-        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
+        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
         return
 
     if not await db.get_gban(target_id):
@@ -823,7 +823,7 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if utils.is_immune(target_id):
-        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
+        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
         return
     
     if not target_id:
@@ -876,7 +876,7 @@ async def addsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if utils.is_immune(target_id):
-        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
+        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
         return
 
     if await db.get_gban(target_id):
@@ -929,7 +929,7 @@ async def delsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if utils.is_immune(target_id):
-        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
+        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
         return
 
     if await db.remove_sudo(target_id):
@@ -1273,7 +1273,7 @@ async def addsupport_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
 
     if utils.is_immune(target_id):
-        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
+        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
         return
 
     if await db.get_gban(target_id):
@@ -1326,7 +1326,7 @@ async def delsupport_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
 
     if utils.is_immune(target_id):
-        await utils.send_safe_reply(update, context, f"This ID (<code>{target_id}</code>) is on the exception list. You cannot perform any actions on it.")
+        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
         return
 
     if await db.remove_support(target_id):

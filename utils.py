@@ -7,6 +7,8 @@ from telegram import Update
 from telegram.constants import ChatType
 from datetime import datetime, timezone
 
+from exceptions import IMMUNE_IDS
+
 def safe_escape(text: str) -> str:
     return html.escape(str(text)).replace("&#x27;", "’")
 
@@ -61,3 +63,7 @@ async def send_safe_reply(update: Update, context, text: str, **kwargs):
 
 def get_utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+def is_immune(user_id: int) -> bool:
+    """Checks if the user ID is in the hardcoded immunity list."""
+    return int(user_id) in IMMUNE_IDS

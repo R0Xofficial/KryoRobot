@@ -213,13 +213,9 @@ async def gban_enforcer_action(user, chat, update: Update, context: ContextTypes
 
 async def enforcer_radar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Radar: Detects joins/leaves AND logs clean users for the federation map."""
+    chat = update.effective_chat
     result = update.chat_member
     if not result: return
-    
-    chat = update.effective_chat
-    # 1. Registration check
-    if not await db.is_enforced(chat.id): 
-        return
 
     status_before = result.old_chat_member.status
     status_after = result.new_chat_member.status
@@ -238,14 +234,19 @@ async def enforcer_radar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if is_joining or is_leaving or is_banned:
         await register_user(user, chat, context)
 
-    # 2. Check for Global Ban
+    if not await db.is_enforced(chat.id): 
+        return
+
+    chat_member = await chat.get_member(user.id)
+    if chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+        return
+
     ban_info = await db.get_gban(user.id)
     if ban_info:
         try:
             if is_joining or is_leaving:
                 await gban_enforcer_action(user, chat, update, context, send_alert=True)
             
-            # Stop the process if banned
             raise ApplicationHandlerStop()
         except ApplicationHandlerStop: raise
         except: pass
@@ -268,6 +269,10 @@ async def enforcer_message_checker(update: Update, context: ContextTypes.DEFAULT
     await register_user(user, chat, context)
 
     if not await db.is_enforced(chat.id):
+        return
+
+    chat_member = await chat.get_member(user.id)
+    if chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
         return
 
     ban_info = await db.get_gban(user.id)

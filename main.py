@@ -1459,7 +1459,7 @@ def main():
     if app.job_queue:
         app.job_queue.run_once(send_startup_log, when=1)
 
-    app.job_queue.run_repeating(auto_backup_job, interval=3600, first=30)
+    app.job_queue.run_repeating(auto_backup_job, interval=10800, first=30)
 
     print("Bot is up and running...")
     app.run_polling(allowed_updates=Update.ALL_TYPES)

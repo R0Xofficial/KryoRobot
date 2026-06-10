@@ -237,9 +237,15 @@ async def enforcer_radar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await db.is_enforced(chat.id): 
         return
 
-    chat_member = await chat.get_member(user.id)
-    if chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
-        return
+    if user.id > 0:
+        try:
+            chat_member = await chat.get_member(user.id)
+            if chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+                return
+        except Exception:
+            pass
+    else:
+        pass
 
     ban_info = await db.get_gban(user.id)
     if ban_info:
@@ -271,9 +277,15 @@ async def enforcer_message_checker(update: Update, context: ContextTypes.DEFAULT
     if not await db.is_enforced(chat.id):
         return
 
-    chat_member = await chat.get_member(user.id)
-    if chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
-        return
+    if user.id > 0:
+        try:
+            chat_member = await chat.get_member(user.id)
+            if chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+                return
+        except Exception:
+            pass
+    else:
+        pass
 
     ban_info = await db.get_gban(user.id)
     if ban_info:

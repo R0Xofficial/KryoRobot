@@ -95,10 +95,10 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
             final_log = (f"<b>{hashtag}</b>\n"
                          f"<b>Initiated From:</b> {chat_display} [<code>{chat_id}</code>]\n\n"
                          f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-                         f"<b>Reason:</b> <code>{utils.safe_escape(reason)}</code>\n")
+                         f"<b>Reason:</b> {utils.safe_escape(reason)}\n")
             
             if old_ban: 
-                final_log += f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>\n"
+                final_log += f"<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}\n"
             
             final_log += (f"<b>Date:</b> <code>{curr_time}</code>\n"
                           f"<b>Admin:</b> {supporter_link} [<code>{supporter_id}</code>]\n")
@@ -137,7 +137,7 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
                 final_log = (f"<b>#UNGBANNED</b>\n"
                              f"<b>Initiated From:</b> {chat_display} [<code>{chat_id}</code>]\n\n"
                              f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-                             f"<b>Reason:</b> <code>{utils.safe_escape(reason)}</code>\n"
+                             f"<b>Reason:</b> {utils.safe_escape(reason)}\n"
                              f"<b>Date:</b> <code>{curr_time}</code>\n"
                              f"<b>Admin:</b> {supporter_link} [<code>{supporter_id}</code>]\n")
                 
@@ -201,7 +201,7 @@ async def gban_enforcer_action(user, chat, update: Update, context: ContextTypes
                 msg = (f"<b>Alert!</b> Detected globally banned user.\n"
                        f"<code>I banned him here!</code>\n"
                        f"<b>User:</b> {user_link} [<code>{user.id}</code>]\n"
-                       f"<b>Reason:</b> <code>{utils.safe_escape(ban_info[0])}</code>\n"
+                       f"<b>Reason:</b> {utils.safe_escape(ban_info[0])}\n"
                        f"<b>Appeal Chat:</b> {APPEAL_CHAT_USERNAME}")
                 
                 # Send as a fresh message to avoid "Message not found" errors
@@ -502,8 +502,8 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         log_msg = (f"<b>{hashtag}</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-                   f"<b>Reason:</b> <code>{utils.safe_escape(reason)}</code>\n")
-        if old_ban: log_msg += f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>\n"
+                   f"<b>Reason:</b> {utils.safe_escape(reason)}\n")
+        if old_ban: log_msg += f"<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}\n"
         log_msg += f"<b>Date:</b> <code>{curr_time}</code>\n<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]"
         
         if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
@@ -534,8 +534,8 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         req_msg = (f"<b>{hashtag}</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-                   f"<b>Reason:</b> <code>{reason}</code>\n")
-        if old_ban: req_msg += f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>\n"
+                   f"<b>Reason:</b> {reason}\n")
+        if old_ban: req_msg += f"<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}\n"
         req_msg += f"<b>Admin:</b> {supporter_link} [<code>{admin.id}</code>]"
         
         if LOG_CHAT_ID:
@@ -606,8 +606,8 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         log_msg = (f"<b>{hashtag}</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-                   f"<b>Reason:</b> <code>{utils.safe_escape(reason)}</code>\n")
-        if old_ban: log_msg += f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>\n"
+                   f"<b>Reason:</b> {utils.safe_escape(reason)}\n")
+        if old_ban: log_msg += f"<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}\n"
         log_msg += f"<b>Date:</b> <code>{curr_time}</code>\n<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]"
         
         if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
@@ -643,8 +643,8 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         req_msg = (f"<b>{hashtag}</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-                   f"<b>Reason:</b> <code>{reason}</code>\n")
-        if old_ban: req_msg += f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>\n"
+                   f"<b>Reason:</b> {reason}\n")
+        if old_ban: req_msg += f"<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}\n"
         req_msg += f"<b>Admin:</b> {supporter_link} [<code>{admin.id}</code>]"
         
         if LOG_CHAT_ID:
@@ -710,7 +710,7 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             log_msg = (f"<b>#UNGBANNED</b>\n"
                        f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
                        f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-                       f"<b>Reason:</b> <code>{utils.safe_escape(reason)}</code>\n"
+                       f"<b>Reason:</b> {utils.safe_escape(reason)}\n"
                        f"<b>Date:</b> <code>{curr_time}</code>\n"
                        f"<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]")
 
@@ -749,7 +749,7 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         req_msg = (f"<b>#UNGBANREQUEST</b>\n"
                    f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-                   f"<b>Reason:</b> <code>{reason}</code>\n"
+                   f"<b>Reason:</b> {reason}\n"
                    f"<b>Admin:</b> {supporter_link} [<code>{admin.id}</code>]")
         
         if LOG_CHAT_ID:
@@ -864,7 +864,7 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif ban:
         msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n"
                f"<b>Status:</b> Banned\n"
-               f"<b>Reason:</b> <code>{utils.safe_escape(ban[0])}</code>\n<b>Date:</b> <code>{ban[2]}</code>\n")
+               f"<b>Reason:</b> {utils.safe_escape(ban[0])}\n<b>Date:</b> <code>{ban[2]}</code>\n")
         if sudo:
             if ban[1] == 0:
                 msg += f"<b>Admin:</b> This ban is imported."

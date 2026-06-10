@@ -824,7 +824,7 @@ async def propagate_unban(context: ContextTypes.DEFAULT_TYPE):
             )
         except: pass
         
-@bot_command(["gbanstat", "gbaninfo"])
+@bot_command(["gbanstat", "gstat"])
 async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     sudo = await db.is_sudo(user.id)
@@ -856,14 +856,14 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     u_link = await utils.create_user_link(target_id, context)
     title = "Your Global Ban Status:" if target_id == user.id else "Global Ban Status:"
     if target_id == OWNER_ID:
-        msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> Bot Owner")
+        msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> <i>Bot Owner</i>")
     elif await db.is_sudo(target_id):
-        msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> Bot Sudo")
+        msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> <i>Bot Sudo</i>")
     elif await db.is_support(target_id):
-        msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> Bot Support")
+        msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> <i>Bot Support</i>")
     elif ban:
         msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n"
-               f"<b>Status:</b> Banned\n"
+               f"<b>Status:</b> <i>Banned</i>\n"
                f"<b>Reason:</b> {utils.safe_escape(ban[0])}\n<b>Date:</b> <code>{ban[2]}</code>\n")
         if sudo:
             if ban[1] == 0:
@@ -871,7 +871,7 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 a_link = await utils.create_user_link(ban[1], context)
                 msg += f"<b>Admin:</b> {a_link} [<code>{ban[1]}</code>]"
-    else: msg = f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> Not Banned"
+    else: msg = f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> <i>Not Banned</i>"
     await utils.send_safe_reply(update, context, msg)
 
 @bot_command("addsudo")

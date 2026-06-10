@@ -31,7 +31,10 @@ logger = logging.getLogger(__name__)
 
 # --- HELPERS ---
 async def register_user(user, chat, context):
-    if user and user.id != context.bot.id:
+    if not user or user.id == context.bot.id:
+        return
+
+    if user.id > 0:
         await db.log_user(user.id, user.username, user.first_name)
         if chat and chat.type in [ChatType.GROUP, ChatType.SUPERGROUP]:
             await db.log_chat(chat.id)

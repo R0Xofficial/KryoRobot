@@ -66,4 +66,9 @@ def get_utc_now() -> str:
 
 def is_immune(user_id: int) -> bool:
     """Checks if the user ID is in the hardcoded immunity list."""
-    return int(user_id) in IMMUNE_IDS
+    if user_id is None:
+        return False
+    try:
+        return int(user_id) in IMMUNE_IDS
+    except (ValueError, TypeError):
+        return False

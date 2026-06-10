@@ -460,15 +460,15 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         reason = " ".join(context.args[1:]) if len(context.args) > 1 else None
 
+    if utils.is_immune(target_id):
+        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
+        return
     if not target_id:
         await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?"); return
     if not reason:
         await utils.send_safe_reply(update, context, "Give a reason!"); return
     if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
         await utils.send_safe_reply(update, context, "LoL, looks like... Someone tried gban privileged user. Nice Try."); return
-    if utils.is_immune(target_id):
-        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
-        return
 
     if chat.type == ChatType.PRIVATE:
         chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
@@ -562,13 +562,13 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg_text = update.effective_message.text_html
     reason = msg_text.split(None, 1)[1] if len(msg_text.split()) > 1 else None
 
+    if utils.is_immune(target_id):
+        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
+        return
     if not reason:
         await utils.send_safe_reply(update, context, "Give a reason!"); return
     if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
         await utils.send_safe_reply(update, context, "LoL, looks like... Someone tried gban privileged user. Nice Try."); return
-    if utils.is_immune(target_id):
-        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
-        return
 
     if chat.type == ChatType.PRIVATE:
             chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
@@ -676,15 +676,15 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         reason = " ".join(context.args[1:]) if len(context.args) > 1 else None
 
+    if utils.is_immune(target_id):
+        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
+        return
     if not target_id:
         await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?"); return
     if not reason:
         await utils.send_safe_reply(update, context, "Give a reason!"); return
     if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
         await utils.send_safe_reply(update, context, "Privileged users is never gbanned..."); return
-    if utils.is_immune(target_id):
-        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
-        return
 
     if not await db.get_gban(target_id):
         user_link = await utils.create_user_link(target_id, context)

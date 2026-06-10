@@ -100,7 +100,7 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
             if old_ban: 
                 final_log += f"<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}\n"
             
-            final_log += (f"<b>Date:</b> <code>{curr_time}</code>\n"
+            final_log += (f"<b>Timestamp:</b> <code>{curr_time}</code>\n"
                           f"<b>Admin:</b> {supporter_link} [<code>{supporter_id}</code>]\n")
             
             await query.edit_message_text(final_log, parse_mode=ParseMode.HTML)
@@ -138,7 +138,7 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
                              f"<b>Initiated From:</b> {chat_display} [<code>{chat_id}</code>]\n\n"
                              f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
                              f"<b>Reason:</b> {utils.safe_escape(reason)}\n"
-                             f"<b>Date:</b> <code>{curr_time}</code>\n"
+                             f"<b>Timestamp:</b> <code>{curr_time}</code>\n"
                              f"<b>Admin:</b> {supporter_link} [<code>{supporter_id}</code>]\n")
                 
                 await query.edit_message_text(final_log, parse_mode=ParseMode.HTML)
@@ -504,7 +504,7 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
                    f"<b>Reason:</b> {utils.safe_escape(reason)}\n")
         if old_ban: log_msg += f"<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}\n"
-        log_msg += f"<b>Date:</b> <code>{curr_time}</code>\n<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]"
+        log_msg += f"<b>Timestamp:</b> <code>{curr_time}</code>\n<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]"
         
         if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
         await asyncio.sleep(0.5)
@@ -608,7 +608,7 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
                    f"<b>Reason:</b> {utils.safe_escape(reason)}\n")
         if old_ban: log_msg += f"<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}\n"
-        log_msg += f"<b>Date:</b> <code>{curr_time}</code>\n<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]"
+        log_msg += f"<b>Timestamp:</b> <code>{curr_time}</code>\n<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]"
         
         if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
         await asyncio.sleep(0.5)
@@ -711,7 +711,7 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                        f"<b>Initiated From:</b> {chat_display} [<code>{chat.id}</code>]\n\n"
                        f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
                        f"<b>Reason:</b> {utils.safe_escape(reason)}\n"
-                       f"<b>Date:</b> <code>{curr_time}</code>\n"
+                       f"<b>Timestamp:</b> <code>{curr_time}</code>\n"
                        f"<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]")
 
             if LOG_CHAT_ID: 
@@ -864,7 +864,7 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif ban:
         msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n"
                f"<b>Status:</b> <i>Banned</i>\n"
-               f"<b>Reason:</b> {utils.safe_escape(ban[0])}\n<b>Date:</b> <code>{ban[2]}</code>\n")
+               f"<b>Reason:</b> {utils.safe_escape(ban[0])}\n<b>Timestamp:</b> <code>{ban[2]}</code>\n")
         if sudo:
             if ban[1] == 0:
                 msg += f"<b>Admin:</b> This ban is imported."
@@ -920,7 +920,7 @@ async def addsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     log_msg = (f"<b>#SUDO</b>\n"
                 f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-                f"<b>Date:</b> <code>{curr_time}</code>")
+                f"<b>Timestamp:</b> <code>{curr_time}</code>")
 
     await utils.send_safe_reply(update, context, log_msg)
     if LOG_CHAT_ID:
@@ -958,7 +958,7 @@ async def delsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         log_msg = (f"<b>#UNSUDO</b>\n"
                    f"<b>User:</b> {user_link} [<code>{target_id}</code>]\n"
-                   f"<b>Date:</b> <code>{curr_time}</code>")
+                   f"<b>Timestamp:</b> <code>{curr_time}</code>")
 
         await utils.send_safe_reply(update, context, log_msg)
         if LOG_CHAT_ID:

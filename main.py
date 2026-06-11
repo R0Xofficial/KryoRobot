@@ -192,10 +192,7 @@ async def gban_enforcer_action(user, chat, update: Update, context: ContextTypes
     ban_info = await db.get_gban(user.id)
     if ban_info:
         try:
-            # 1. Ban the user technically across Telegram
-            await context.bot.ban_chat_member(chat.id, user.id)
-            
-            # 2. Send alert message only if requested (usually on Join or Message)
+            # 1. Send alert message only if requested (usually on Join or Message)
             if send_alert:
                 user_link = await utils.create_user_link(user.id, context)
                 msg = (f"<b>Alert!</b> Detected globally banned user.\n"
@@ -206,6 +203,9 @@ async def gban_enforcer_action(user, chat, update: Update, context: ContextTypes
                 
                 # Send as a fresh message to avoid "Message not found" errors
                 await context.bot.send_message(chat.id, msg, parse_mode=ParseMode.HTML)
+
+            # 2. Ban the user technically across Telegram
+            await context.bot.ban_chat_member(chat.id, user.id)
             
             # 3. Stop processing other handlers (Security Layering)
             raise ApplicationHandlerStop()

@@ -356,8 +356,8 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• <code>/help</code> - Sends this help message.",
         "• <code>/ping</code> - Check bot latency.",
         "• <code>/uptime</code> - See how long bot is running.",
-        "• <code>/enforcegban &lt;on/off&gt;</code> - Toggle protection on chat.",
-        "• <code>/gbanstat</code> - Check your own ban status.\n"
+        "• <code>/gbans &lt;on/off/yes/no&gt;</code> - Toggle protection on chat.",
+        "• <code>/gstat</code> - Check your own ban status.\n"
     ]
 
     if is_support or is_sudo:
@@ -366,7 +366,7 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Issue a global ban.",
             "• <code>/dgban &lt;reply&gt; &lt;reason&gt;</code> - Issue a global ban and delete message.",
             "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Revoke a global ban.",
-            "• <code>/gbanstat &lt;target&gt;</code> - Check user's detailed ban info.",
+            "• <code>/gstat &lt;target&gt;</code> - Check user's detailed ban info.",
             "• <code>/stats</code> - View database statistics.\n",
         ])
 

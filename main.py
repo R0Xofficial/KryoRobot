@@ -966,7 +966,7 @@ async def delsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await utils.send_safe_reply(update, context, "This user was not in the Sudo list.")
 
-@bot_command("enforcegban")
+@bot_command(["enforcegban", "gbans"])
 async def enforce_gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat = update.effective_chat
     if not chat or chat.type == ChatType.PRIVATE:

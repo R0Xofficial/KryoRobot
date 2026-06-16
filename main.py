@@ -16,7 +16,7 @@ from telegram.constants import ParseMode, ChatType, ChatMemberStatus
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ChatMemberHandler, ApplicationHandlerStop, CallbackQueryHandler
 from telegram.request import HTTPXRequest
 
-from config import TOKEN, OWNER_ID, LOG_CHAT_ID, APPEAL_CHAT_USERNAME, DB_NAME
+from config import TOKEN, OWNER_ID, LOG_CHAT_ID, APPEAL_CHAT_USERNAME, DB_NAME, HEARTBEAT_ENABLED, HEARTBEAT_INTERVAL
 import database as db
 import utils
 from handlers import bot_command, command_router
@@ -1450,7 +1450,17 @@ async def import_gbans_command(update: Update, context: ContextTypes.DEFAULT_TYP
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
-# --- main.py ---
+async def heartbeat_job(context: ContextTypes.DEFAULT_TYPE):
+    """Sends a heartbeat message to verify the bot is alive."""
+    from config import HEARTBEAT_CHAT_ID
+    
+    try:
+        await context.bot.send_message(
+            chat_id=HEARTBEAT_CHAT_ID,
+            text="I inform you that I am working :D"
+        )
+    except Exception as e:
+        logger.error(f"Heartbeat failed: {e}")
 
 # --- MAIN ---
 
@@ -1478,6 +1488,13 @@ def main():
 
     if app.job_queue:
         app.job_queue.run_once(send_startup_log, when=1)
+        if HEARTBEAT_ENABLED:
+            app.job_queue.run_repeating(
+                heartbeat_job, 
+                interval=HEARTBEAT_INTERVAL, 
+                first=5
+            )
+            print(f"Heartbeat system: ENABLED (every {HEARTBEAT_INTERVAL}s)")
 
     app.job_queue.run_repeating(auto_backup_job, interval=10800, first=30)
 

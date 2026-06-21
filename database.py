@@ -197,3 +197,8 @@ async def import_gbans(ban_list):
             await conn.execute("ROLLBACK")
             raise e
     return added_count
+
+async def has_pending_request(target_id):
+    """Checks if there is already an active gban/dgban/ungban request for this user."""
+    res = await db_query("SELECT 1 FROM support_requests WHERE target_id = ?", (int(target_id),), fetch="one")
+    return res is not None

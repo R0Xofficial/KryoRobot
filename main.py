@@ -469,6 +469,15 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await utils.send_safe_reply(update, context, "Give a reason!"); return
     if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
         await utils.send_safe_reply(update, context, "LoL, looks like... Someone tried gban privileged user. Nice Try."); return
+    if await db.has_pending_request(target_id):
+        user_link = await utils.create_user_link(target_id, context)
+        await utils.send_safe_reply(update, context, f"There is already a pending request for {user_link} [<code>{target_id}</code>] waiting for approval in the log channel.")
+        return
+    old_ban = await db.get_gban(target_id)
+    if old_ban and old_ban[0].strip() == reason.strip():
+        user_link = await utils.create_user_link(target_id, context)
+        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is already globally banned for the same reason. <b>No changes made.</b>")
+        return
 
     if chat.type == ChatType.PRIVATE:
         chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
@@ -479,13 +488,6 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_display = utils.safe_escape(chat.title)
 
     await utils.send_safe_reply(update, context, "Ok!")
-
-    old_ban = await db.get_gban(target_id)
-
-    if old_ban and old_ban[0].strip() == reason.strip():
-        user_link = await utils.create_user_link(target_id, context)
-        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is already globally banned for the same reason. <b>No changes made.</b>")
-        return
 
     if is_sudo:
         await db.add_gban(target_id, admin.id, reason)
@@ -568,6 +570,15 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await utils.send_safe_reply(update, context, "Give a reason!"); return
     if await db.is_sudo(target_id) or await db.is_support(target_id) or target_id == context.bot.id:
         await utils.send_safe_reply(update, context, "LoL, looks like... Someone tried gban privileged user. Nice Try."); return
+    if await db.has_pending_request(target_id):
+        user_link = await utils.create_user_link(target_id, context)
+        await utils.send_safe_reply(update, context, f"There is already a pending request for {user_link} [<code>{target_id}</code>] waiting for approval in the log channel.")
+        return
+    old_ban = await db.get_gban(target_id)
+    if old_ban and old_ban[0].strip() == reason.strip():
+        user_link = await utils.create_user_link(target_id, context)
+        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is already globally banned for the same reason. <b>No changes made.</b>")
+        return
 
     if chat.type == ChatType.PRIVATE:
             chat_display = f"PM with {utils.safe_escape(admin.first_name)}"
@@ -578,13 +589,6 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_display = utils.safe_escape(chat.title)
 
     await utils.send_safe_reply(update, context, "Ok!")
-
-    old_ban = await db.get_gban(target_id)
-
-    if old_ban and old_ban[0].strip() == reason.strip():
-        user_link = await utils.create_user_link(target_id, context)
-        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is already globally banned for the same reason.")
-        return
     
     if is_sudo:
         try:

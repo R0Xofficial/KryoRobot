@@ -3,7 +3,7 @@ import html
 import database as db
 import telegram
 import aiosqlite
-from telegram import Update
+from telegram import Update, LinkPreviewOptions
 from telegram.constants import ChatType
 from datetime import datetime, timezone
 

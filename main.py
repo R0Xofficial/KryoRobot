@@ -511,7 +511,7 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML, link_preview_options=LinkPreviewOptions(is_disabled=True))
         await asyncio.sleep(0.5)
         if old_ban:
-            await utils.send_safe_reply(update, context, f"Done! Gban reason updated.\n<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}", link_preview_options=LinkPreviewOptions(is_disabled=True))
+            await utils.send_safe_reply(update, context, f"Done! Gban reason updated.\n<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}")
         else:
             await utils.send_safe_reply(update, context, f"Done! Gbanned.")
 
@@ -617,7 +617,7 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML, link_preview_options=LinkPreviewOptions(is_disabled=True))
         await asyncio.sleep(0.5)
         if old_ban:
-            await utils.send_safe_reply(update, context, f"Done! Gban reason updated.\n<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}", link_preview_options=LinkPreviewOptions(is_disabled=True))
+            await utils.send_safe_reply(update, context, f"Done! Gban reason updated.\n<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}")
         else:
             await utils.send_safe_reply(update, context, f"Done! Gbanned.")
 
@@ -876,7 +876,7 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 a_link = await utils.create_user_link(ban[1], context)
                 msg += f"<b>Admin:</b> {a_link} [<code>{ban[1]}</code>]"
     else: msg = f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> <i>Not Banned</i>"
-    await utils.send_safe_reply(update, context, msg, link_preview_options=LinkPreviewOptions(is_disabled=True))
+    await utils.send_safe_reply(update, context, msg)
 
 @bot_command("addsudo")
 async def addsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):

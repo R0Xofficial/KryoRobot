@@ -11,7 +11,7 @@ import telegram
 import json
 from telegram.error import Forbidden, BadRequest, RetryAfter, TimedOut
 from datetime import datetime, timezone
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, LinkPreviewOptions
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode, ChatType, ChatMemberStatus
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ChatMemberHandler, ApplicationHandlerStop, CallbackQueryHandler
 from telegram.request import HTTPXRequest
@@ -103,11 +103,11 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
             final_log += (f"<b>Timestamp:</b> <code>{curr_time}</code>\n"
                           f"<b>Admin:</b> {supporter_link} [<code>{supporter_id}</code>]\n")
             
-            await query.edit_message_text(final_log, parse_mode=ParseMode.HTML, link_preview_options=LinkPreviewOptions(is_disabled=True))
+            await query.edit_message_text(final_log, parse_mode=ParseMode.HTML)
             
             if old_ban:
                 feedback = (f"Done! Gban reason updated.\n"
-                            f"<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}")
+                            f"<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>")
             else:
                 feedback = "Done! Gbanned."
             
@@ -116,19 +116,18 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
                     await context.bot.send_message(
                         chat_id=chat_id, 
                         text=feedback, 
-                        parse_mode=ParseMode.HTML,
-                        link_preview_options=LinkPreviewOptions(is_disabled=True)
+                        parse_mode=ParseMode.HTML
                     )
                 else:
                     await context.bot.send_message(
-                        chat_id=chat_id, text=feedback, parse_mode=ParseMode.HTML, link_preview_options=LinkPreviewOptions(is_disabled=True),
+                        chat_id=chat_id, text=feedback, parse_mode=ParseMode.HTML,
                         reply_to_message_id=msg_id
                     )
             except:
                 try:
                     await context.bot.send_message(
                         chat_id=chat_id, text=feedback, 
-                        parse_mode=ParseMode.HTML, link_preview_options=LinkPreviewOptions(is_disabled=True), message_thread_id=thread_id
+                        parse_mode=ParseMode.HTML, message_thread_id=thread_id
                     )
                 except: pass
 
@@ -142,7 +141,7 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
                              f"<b>Timestamp:</b> <code>{curr_time}</code>\n"
                              f"<b>Admin:</b> {supporter_link} [<code>{supporter_id}</code>]\n")
                 
-                await query.edit_message_text(final_log, parse_mode=ParseMode.HTML, link_preview_options=LinkPreviewOptions(is_disabled=True))
+                await query.edit_message_text(final_log, parse_mode=ParseMode.HTML)
                 
                 context.job_queue.run_once(propagate_unban, when=1, data={
                     'user_id': target_id, 
@@ -206,7 +205,7 @@ async def gban_enforcer_action(user, chat, update: Update, context: ContextTypes
                        f"<b>Appeal Chat:</b> {APPEAL_CHAT_USERNAME}")
                 
                 # Send as a fresh message to avoid "Message not found" errors
-                await context.bot.send_message(chat.id, msg, parse_mode=ParseMode.HTML, link_preview_options=LinkPreviewOptions(is_disabled=True))
+                await context.bot.send_message(chat.id, msg, parse_mode=ParseMode.HTML)
             
             # 3. Stop processing other handlers (Security Layering)
             raise ApplicationHandlerStop()
@@ -508,10 +507,10 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if old_ban: log_msg += f"<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}\n"
         log_msg += f"<b>Timestamp:</b> <code>{curr_time}</code>\n<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]"
         
-        if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML, link_preview_options=LinkPreviewOptions(is_disabled=True))
+        if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
         await asyncio.sleep(0.5)
         if old_ban:
-            await utils.send_safe_reply(update, context, f"Done! Gban reason updated.\n<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}")
+            await utils.send_safe_reply(update, context, f"Done! Gban reason updated.\n<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>")
         else:
             await utils.send_safe_reply(update, context, f"Done! Gbanned.")
 
@@ -541,7 +540,7 @@ async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         req_msg += f"<b>Admin:</b> {supporter_link} [<code>{admin.id}</code>]"
         
         if LOG_CHAT_ID:
-            await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML, link_preview_options=LinkPreviewOptions(is_disabled=True))
+            await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
         
         await utils.send_safe_reply(update, context, "Request Sended.")
 
@@ -614,10 +613,10 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if old_ban: log_msg += f"<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}\n"
         log_msg += f"<b>Timestamp:</b> <code>{curr_time}</code>\n<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]"
         
-        if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML, link_preview_options=LinkPreviewOptions(is_disabled=True))
+        if LOG_CHAT_ID: await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
         await asyncio.sleep(0.5)
         if old_ban:
-            await utils.send_safe_reply(update, context, f"Done! Gban reason updated.\n<b>Old Reason:</b> {utils.safe_escape(old_ban[0])}")
+            await utils.send_safe_reply(update, context, f"Done! Gban reason updated.\n<b>Old Reason:</b> <code>{utils.safe_escape(old_ban[0])}</code>")
         else:
             await utils.send_safe_reply(update, context, f"Done! Gbanned.")
 
@@ -652,7 +651,7 @@ async def dgban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         req_msg += f"<b>Admin:</b> {supporter_link} [<code>{admin.id}</code>]"
         
         if LOG_CHAT_ID:
-            await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML, link_preview_options=LinkPreviewOptions(is_disabled=True))
+            await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
         
         await utils.send_safe_reply(update, context, "Request Sended.")
 
@@ -719,7 +718,7 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                        f"<b>Admin:</b> {admin_link} [<code>{admin.id}</code>]")
 
             if LOG_CHAT_ID: 
-                await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML, link_preview_options=LinkPreviewOptions(is_disabled=True))
+                await context.bot.send_message(LOG_CHAT_ID, log_msg, parse_mode=ParseMode.HTML)
             
             context.job_queue.run_once(propagate_unban, when=1, data={
                 'user_id': target_id,
@@ -757,7 +756,7 @@ async def ungban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                    f"<b>Admin:</b> {supporter_link} [<code>{admin.id}</code>]")
         
         if LOG_CHAT_ID:
-            await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML, link_preview_options=LinkPreviewOptions(is_disabled=True))
+            await context.bot.send_message(LOG_CHAT_ID, req_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
         
         await utils.send_safe_reply(update, context, "Request Sended.")
 

@@ -3,7 +3,7 @@ import html
 import database as db
 import telegram
 import aiosqlite
-from telegram import Update, LinkPreviewOptions
+from telegram import Update
 from telegram.constants import ChatType
 from datetime import datetime, timezone
 
@@ -50,14 +50,13 @@ async def resolve_id(update: Update, context, input_str: str):
 
 async def send_safe_reply(update: Update, context, text: str, **kwargs):
     try:
-        return await update.message.reply_html(text, link_preview_options=LinkPreviewOptions(is_disabled=True), **kwargs)
+        return await update.message.reply_html(text, **kwargs)
     except telegram.error.BadRequest as e:
         if "Message to be replied not found" in str(e):
             return await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=text,
                 parse_mode='HTML',
-                link_preview_options=LinkPreviewOptions(is_disabled=True),
                 **kwargs
             )
         raise e

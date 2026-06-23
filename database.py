@@ -41,6 +41,9 @@ def init_db():
                         type TEXT,
                         thread_id INTEGER,
                         target_msg_id INTEGER)''')
+        # approve
+        conn.execute('''CREATE TABLE IF NOT EXISTS local_approvals 
+                (chat_id INTEGER, user_id INTEGER, approved_by INTEGER, PRIMARY KEY (chat_id, user_id))''')
         conn.commit()
 
 async def db_query(query, params=(), fetch=None, commit=False):
@@ -201,4 +204,21 @@ async def import_gbans(ban_list):
 async def has_pending_request(target_id):
     """Checks if there is already an active gban/dgban/ungban request for this user."""
     res = await db_query("SELECT 1 FROM support_requests WHERE target_id = ?", (int(target_id),), fetch="one")
+    return res is not None
+
+async def add_local_approval(chat_id, user_id, admin_id):
+    """Gives a user local immunity on a specific chat."""
+    await db_query("INSERT OR IGNORE INTO local_approvals VALUES (?, ?, ?)", 
+                   (int(chat_id), int(user_id), int(admin_id)), commit=True)
+
+async def remove_local_approval(chat_id, user_id):
+    """Removes local immunity for a user on a specific chat."""
+    cursor = await db_query("DELETE FROM local_approvals WHERE chat_id = ? AND user_id = ?", 
+                            (int(chat_id), int(user_id)), commit=True)
+    return cursor > 0
+
+async def is_locally_approved(chat_id, user_id):
+    """Checks if a user is approved (immune) on this specific chat."""
+    res = await db_query("SELECT 1 FROM local_approvals WHERE chat_id = ? AND user_id = ?", 
+                         (int(chat_id), int(user_id)), fetch="one")
     return res is not None

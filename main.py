@@ -241,6 +241,9 @@ async def enforcer_radar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await db.is_enforced(chat.id): 
         return
 
+    if await db.is_locally_approved(chat.id, user.id):
+        return
+
     if user.id > 0:
         try:
             chat_member = await chat.get_member(user.id)
@@ -279,6 +282,9 @@ async def enforcer_message_checker(update: Update, context: ContextTypes.DEFAULT
     await register_user(user, chat, context)
 
     if not await db.is_enforced(chat.id):
+        return
+
+    if await db.is_locally_approved(chat.id, user.id):
         return
 
     if user.id > 0:
@@ -330,6 +336,10 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if chat.type != ChatType.PRIVATE:
         return
+
+    if context.args and context.args[0] == "help":
+        await send_main_help_menu(update.message, user, context)
+        return
     
     welcome_text = (
         f"👋 <b>Hello, {utils.safe_escape(user.first_name)}!</b>\n\n"
@@ -345,64 +355,140 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @bot_command("help")
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    is_support = await db.is_support(user_id)
-    is_sudo = await db.is_sudo(user_id)
-    is_owner = (user_id == OWNER_ID)
+    chat = update.effective_chat
+    user = update.effective_user
 
-    help_parts = [
-        "<b>Bot Help</b>\n",
-        "<b>User Commands:</b>",
-        "• <code>/start</code> - Sends start message.",
-        "• <code>/help</code> - Sends this help message.",
-        "• <code>/ping</code> - Check bot latency.",
-        "• <code>/uptime</code> - See how long bot is running.",
-        "• <code>/gbans &lt;on/off/yes/no&gt;</code> - Toggle protection on chat.",
-        "• <code>/gstat</code> - Check your own ban status.\n"
-    ]
+    if chat.type != ChatType.PRIVATE:
+        bot_username = context.bot.username
+        url = f"https://t.me/{bot_username}?start=help"
+        
+        keyboard = InlineKeyboardMarkup([[
+            InlineKeyboardButton("Click me for help!", url=url)
+        ]])
+        
+        await utils.send_safe_reply(
+            update, context, 
+            "Click the button below to see the available commands in our private chat.",
+            reply_markup=keyboard
+        )
+        return
 
-    if is_support or is_sudo:
-        help_parts.extend([
-            "<b>Support Commands:</b>",
-            "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Issue a global ban.",
-            "• <code>/dgban &lt;reply&gt; &lt;reason&gt;</code> - Issue a global ban and delete message.",
-            "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Revoke a global ban.",
-            "• <code>/gstat &lt;target&gt;</code> - Check user's detailed ban info.",
-            "• <code>/stats</code> - View database statistics.\n",
-        ])
+    await send_main_help_menu(update.message, user, context)
 
-    if is_sudo:
-        help_parts.extend([
-            "<b>Sudo Commands:</b>",
-            "• <code>/sudolist</code> - Show all bot sudos.",
-            "• <code>/supportlist</code> - Show all bot support users.",
-            "• <code>/leave</code> - Bot leaving current chat.\n"
-        ])
+async def send_main_help_menu(message_obj, user, context, is_edit=False, query=None):
+    """Helper to construct and send/edit the main help menu."""
+    is_sudo = await db.is_sudo(user.id)
+    is_support = await db.is_support(user.id)
+    is_owner = (user.id == OWNER_ID)
 
-    if is_owner:
-        help_parts.extend([
-            "<b>Master Owner Commands:</b>",
-            "• <code>/addsudo &lt;target&gt;</code> - Grant sudo privileges.",
-            "• <code>/delsudo &lt;target&gt;</code> - Revoke sudo privileges.",
-            "• <code>/addsupport &lt;target&gt;</code> - Grant support privileges.",
-            "• <code>/delsupport &lt;target&gt;</code> - Revoke support privileges.",
-            "• <code>/cleanup</code> - Remove inactive chats from database.",
-            "• <code>/restart</code> - Restart bot process.",
-            "• <code>/update</code> - Update bot from Git.",
-            "• <code>/restore</code> - Restore database from file.",
-            "• <code>/backup</code> - Get the latest database file.",
-            "• <code>/importbans</code> - Import bans from json file to bot database.\n"
-        ])
+    keyboard = [[InlineKeyboardButton("User Commands", callback_data="h_user")]]
+    if is_support or is_sudo: keyboard.append([InlineKeyboardButton("Support Commands", callback_data="h_support")])
+    if is_sudo: keyboard.append([InlineKeyboardButton("Sudo Commands", callback_data="h_sudo")])
+    if is_owner: keyboard.append([InlineKeyboardButton("Master Commands", callback_data="h_owner")])
 
-    help_parts.append("<i>You can use '/' or '!' as a prefix for all commands.</i>")
-
-    final_text = "\n".join(help_parts)
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    user_name = utils.safe_escape(user.first_name)
     
-    try:
-        await utils.send_safe_reply(update, context, final_text)
-    except Exception as e:
-        logger.error(f"Help HTML Error: {e}")
-        await utils.send_safe_reply(update, context, "Error: There is a formatting issue in the help message.")
+    text = (f"<b>📚 Bot Help Menu</b>\n\n"
+            f"Hello {user_name}! Choose a category below to see commands available for you.")
+
+    if is_edit and query:
+        await query.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=reply_markup)
+    else:
+        await message_obj.reply_html(text, reply_markup=reply_markup)
+
+async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handles button clicks in the help menu and displays command lists."""
+    query = update.callback_query
+    user_id = query.from_user.id
+    data = query.data
+
+    await query.answer()
+
+    # Shared footer for all categories
+    footer = "\n\n<i>Note: You can use '/' or '!' as a prefix for all commands.</i>"
+
+    # --- CATEGORY CONTENT ---
+    help_sections = {
+        "h_user": (
+            "<b>User Commands</b>\n\n"
+            "• <code>/start</code> - Introduces the bot.\n"
+            "• <code>/help</code> - Opens this help menu.\n"
+            "• <code>/ping</code> - Check bot's response time.\n"
+            "• <code>/uptime</code> - See how long the bot is online.\n"
+            "• <code>/gbanstat</code> - Check your own global ban status.\n\n"
+            "<b>Group Moderation Command</b>\n"
+            "• <code>/gbans &lt;on/off/yes/no&gt;</code> - Toggle protection here.\n"
+            "• <code>/approve &lt;target&gt;</code> - Give user local immunity.\n"
+            "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity.\n"
+            "• <code>/approvals</code> - List all locally immune users."
+            + footer
+        ),
+        "h_support": (
+            "<b>Support Commands</b>\n\n"
+            "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Request a global ban.\n"
+            "• <code>/dgban &lt;target&gt; &lt;reason&gt;</code> - Request delete & ban.\n"
+            "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Request ban removal.\n"
+            "• <code>/gbanstat &lt;target&gt;</code> - Check target's ban details."
+            + footer
+        ),
+        "h_sudo": (
+            "<b>Sudo Commands</b>\n\n"
+            "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Execute immediate global ban.\n"
+            "• <code>/dgban &lt;target&gt; &lt;reason&gt;</code> - Immediate delete & global ban.\n"
+            "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Execute immediate ban removal.\n"
+            "• <code>/approve &lt;target&gt;</code> - Grant local immunity in this chat.\n"
+            "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity in this chat.\n"
+            "• <code>/stats</code> - View global database statistics.\n"
+            "• <code>/sudolist</code> - Show all bot sudo administrators.\n"
+            "• <code>/supportlist</code> - Show all bot support members.\n"
+            "• <code>/leave</code> - Force the bot to leave current chat."
+            + footer
+        ),
+        "h_owner": (
+            "<b>Master Owner Commands</b>\n\n"
+            "• <code>/addsudo &lt;target&gt;</code> - Grant Sudo privileges.\n"
+            "• <code>/delsudo &lt;target&gt;</code> - Revoke Sudo privileges.\n"
+            "• <code>/addsupport &lt;target&gt;</code> - Grant Support privileges.\n"
+            "• <code>/delsupport &lt;target&gt;</code> - Revoke Support privileges.\n"
+            "• <code>/cleanup</code> - Clean inactive groups from database.\n"
+            "• <code>/databackup</code> - Get the current database file.\n"
+            "• <code>/restore</code> - Replace database with a backup file.\n"
+            "• <code>/update</code> - Pull latest code from Git and restart.\n"
+            "• <code>/restart</code> - Manually reboot the bot process.\n"
+            "• <code>/importbans</code> - Mass import global bans from Rose file."
+            + footer
+        )
+    }
+
+    back_button = [[InlineKeyboardButton("Back to Menu", callback_data="h_main")]]
+
+    if data in help_sections:
+        await query.edit_message_text(
+            text=help_sections[data],
+            parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup(back_button)
+        )
+    
+    elif data == "h_main":
+        is_sudo = await db.is_sudo(user_id)
+        is_support = await db.is_support(user_id)
+        is_owner = (user_id == OWNER_ID)
+        
+        keyboard = [[InlineKeyboardButton("User Commands", callback_data="h_user")]]
+        if is_support or is_sudo: keyboard.append([InlineKeyboardButton("Support Commands", callback_data="h_support")])
+        if is_sudo: keyboard.append([InlineKeyboardButton("Sudo Commands", callback_data="h_sudo")])
+        if is_owner: keyboard.append([InlineKeyboardButton("Master Commands", callback_data="h_owner")])
+        
+        user_name = utils.safe_escape(query.from_user.first_name)
+        main_text = (f"<b>Bot Help Menu</b>\n\n"
+                     f"Hello {user_name}! Choose a category below to see commands available for you.")
+        
+        await query.edit_message_text(
+            text=main_text,
+            parse_mode=ParseMode.HTML,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
 
 @bot_command("ping")
 async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1466,6 +1552,115 @@ async def heartbeat_job(context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error(f"Heartbeat failed: {e}")
 
+@bot_command("approve")
+async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    admin = update.effective_user
+    chat = update.effective_chat
+    if chat.type == ChatType.PRIVATE:
+        return
+
+    chat_member = await chat.get_member(admin.id)
+    is_admin = chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
+    is_sudo = await db.is_sudo(user.id)
+    is_support = await db.is_support(user.id)
+    if not (is_admin or is_sudo or is_support):
+        await utils.send_safe_reply(update, context, f"Only administrators of this group have permissions for this command!")
+        return
+
+    target_id = None
+    if update.message.reply_to_message and not update.message.reply_to_message.forum_topic_created:
+        target_id = update.message.reply_to_message.from_user.id
+    elif context.args:
+        target_id, err = await utils.resolve_id(update, context, context.args[0])
+        if err:
+            await utils.send_safe_reply(update, context, err)
+            return
+
+    if utils.is_immune(target_id):
+        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
+        return
+
+    if not target_id:
+        await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?")
+        return
+
+    await db.add_local_approval(chat.id, target_id, admin.id)
+    
+    try:
+        await context.bot.unban_chat_member(chat.id, target_id, only_if_banned=True)
+    except:
+        pass
+
+    user_link = await utils.create_user_link(target_id, context)
+    await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] has been <b>approved</b> in this chat. From now on, the user has immunity from global bans.")
+
+
+@bot_command("unapprove")
+async def unapprove_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    admin = update.effective_user
+    chat = update.effective_chat
+    if chat.type == ChatType.PRIVATE:
+        return
+
+    chat_member = await chat.get_member(admin.id)
+    is_admin = chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
+    is_sudo = await db.is_sudo(user.id)
+    is_support = await db.is_support(user.id)
+    if not (is_admin or is_sudo or is_support):
+        await utils.send_safe_reply(update, context, f"Only administrators of this group have permissions for this command!")
+        return
+
+    target_id = None
+    if update.message.reply_to_message and not update.message.reply_to_message.forum_topic_created:
+        target_id = update.message.reply_to_message.from_user.id
+    elif context.args:
+        target_id, err = await utils.resolve_id(update, context, context.args[0])
+
+    if utils.is_immune(target_id):
+        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
+        return
+        
+    if not target_id:
+        await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?")
+        return
+
+    if await db.remove_local_approval(chat.id, target_id):
+        user_link = await utils.create_user_link(target_id, context)
+        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>no longer approved</b> in this chat. From now on, the user does not have immunity from global bans.")
+    else:
+        await update.message.reply_text("This user was not approved in this chat.")
+
+@bot_command(["approvedlist", "approvals"])
+async def approved_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat = update.effective_chat
+    user = update.effective_user
+    
+    if chat.type == ChatType.PRIVATE:
+        await update.message.reply_text("This command only works in groups."); return
+
+    chat_member = await chat.get_member(user.id)
+    is_admin = chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
+    is_sudo = await db.is_sudo(user.id)
+    is_support = await db.is_support(user.id)
+    if not (is_admin or is_sudo or is_support):
+        await utils.send_safe_reply(update, context, f"Only administrators of this group have permissions for this command!")
+        return
+
+    approvals = await db.get_all_local_approvals(chat.id)
+    
+    if not approvals:
+        await utils.send_safe_reply(update, context, "There are no approved users in this chat.")
+        return
+
+    msg = f"<b>Approved Users in {utils.safe_escape(chat.title)}:</b>\n"
+    msg += "<i>These users are immune to Global Bans in this chat.</i>\n\n"
+    
+    for u_id in approvals:
+        u_link = await utils.create_user_link(u_id, context)
+        msg += f"• {u_link} [<code>{u_id}</code>]\n"
+
+    await utils.send_safe_reply(update, context, msg)
+
 # --- MAIN ---
 
 def main():
@@ -1489,6 +1684,7 @@ def main():
     app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, enforcer_message_checker), group=-100)
     app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, passive_data_logger), group=10)
     app.add_handler(CallbackQueryHandler(support_callback_handler, pattern=r"^(apr|dec)_"))
+    app.add_handler(CallbackQueryHandler(help_callback_handler, pattern=r"^h_"))
 
     if app.job_queue:
         app.job_queue.run_once(send_startup_log, when=1)

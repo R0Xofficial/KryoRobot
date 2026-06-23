@@ -414,6 +414,7 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "<b>User Commands</b>\n\n"
             "• <code>/start</code> - Introduces the bot.\n"
             "• <code>/help</code> - Opens this help menu.\n"
+            "• <code>/info &lt;target&gt;</code> - Get info about user.\n"
             "• <code>/ping</code> - Check bot's response time.\n"
             "• <code>/uptime</code> - See how long the bot is online.\n"
             "• <code>/gstat</code> - Check your own global ban status.\n\n"

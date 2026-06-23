@@ -567,6 +567,12 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif await db.is_support(target_id):
         user_rank = "Support"
 
+    group_rank = None
+    if chat_member.status == ChatMemberStatus.OWNER
+        group_rank = "Owner"
+    elif chat_member.status == ChatMemberStatus.ADMINISTRATOR
+        group_rank = "Admin"
+
     lines = [
         "<b>User Information:</b>",
         f"• <b>First Name:</b> {utils.safe_escape(first_name)}",
@@ -578,8 +584,11 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "<b>User Status:</b>",
     ]
 
+    if group_rank and chat.type != ChatType.PRIVATE:
+        lines.append(f"• <b>Group Rank:</b> <code>{group_rank}</code>")
+
     if user_rank:
-        lines.append(f"• <b>Bot Rank:</b> <i>{user_rank}</i>")
+        lines.append(f"• <b>Bot Rank:</b> <code>{user_rank}</code>")
         final_info = "\n".join(lines)
         await utils.send_safe_reply(update, context, final_info)
         return

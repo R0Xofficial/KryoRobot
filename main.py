@@ -416,7 +416,7 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "• <code>/help</code> - Opens this help menu.\n"
             "• <code>/ping</code> - Check bot's response time.\n"
             "• <code>/uptime</code> - See how long the bot is online.\n"
-            "• <code>/gbanstat</code> - Check your own global ban status.\n\n"
+            "• <code>/gstat</code> - Check your own global ban status.\n\n"
             "<b>Group Moderation Command</b>\n"
             "• <code>/gbans &lt;on/off/yes/no&gt;</code> - Toggle protection here.\n"
             "• <code>/approve &lt;target&gt;</code> - Give user local immunity.\n"
@@ -429,7 +429,10 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Request a global ban.\n"
             "• <code>/dgban &lt;target&gt; &lt;reason&gt;</code> - Request delete & ban.\n"
             "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Request ban removal.\n"
-            "• <code>/gbanstat &lt;target&gt;</code> - Check target's ban details."
+            "• <code>/gstat &lt;target&gt;</code> - Check target's ban details."
+            "• <code>/stats</code> - View database statistics.\n"
+            "• <code>/approve &lt;target&gt;</code> - Grant local immunity in this chat.\n"
+            "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity in this chat.\n"
             + footer
         ),
         "h_sudo": (
@@ -437,12 +440,14 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Execute immediate global ban.\n"
             "• <code>/dgban &lt;target&gt; &lt;reason&gt;</code> - Immediate delete & global ban.\n"
             "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Execute immediate ban removal.\n"
+            "• <code>/gstat &lt;target&gt;</code> - Check target's ban details."
+            "• <code>/stats</code> - View database statistics.\n"
             "• <code>/approve &lt;target&gt;</code> - Grant local immunity in this chat.\n"
             "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity in this chat.\n"
-            "• <code>/stats</code> - View global database statistics.\n"
             "• <code>/sudolist</code> - Show all bot sudo administrators.\n"
             "• <code>/supportlist</code> - Show all bot support members.\n"
-            "• <code>/leave</code> - Force the bot to leave current chat."
+            "• <code>/leave</code> - Force the bot to leave current chat.\n\n"
+            "<i>More commands in Support page.</i>"
             + footer
         ),
         "h_owner": (
@@ -524,6 +529,68 @@ async def uptime_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"<b>Bot Uptime</b>\n"
         f"<b>Running for:</b> <code>{readable_uptime}</code>"
     )
+
+@bot_command("info")
+async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    msg = update.effective_message
+    chat = update.effective_chat
+    
+    target_id = None
+    if msg.reply_to_message and not msg.reply_to_message.forum_topic_created:
+        target_id = msg.reply_to_message.from_user.id
+    elif context.args:
+        target_id, err = await utils.resolve_id(update, context, context.args[0])
+        if err:
+            await utils.send_safe_reply(update, context, err); return
+    
+    if not target_id:
+        target_id = update.effective_user.id
+
+    try:
+        user = await context.bot.get_chat(target_id)
+        first_name = user.first_name
+        last_name = user.last_name or ""
+        username = f"@{user.username}" if user.username else "None"
+    except Exception:
+        first_name = "Unknown"
+        last_name = ""
+        username = "None"
+
+    is_gbanned = "Yes" if await db.get_gban(target_id) else "No"
+    
+    is_approved = "No"
+    if chat.type != ChatType.PRIVATE:
+        is_approved = "Yes" if await db.is_locally_approved(chat.id, target_id) else "No"
+    
+    is_immune = "Yes" if utils.is_immune(target_id) else "No"
+
+    user_rank = None
+    if target_id == OWNER_ID:
+        user_rank = "Master Owner"
+    elif await db.is_sudo(target_id):
+        user_rank = "Bot Sudo"
+    elif await db.is_support(target_id):
+        user_rank = "Bot Support"
+
+    lines = [
+        "<b>User Information</b>",
+        f"• <b>First Name:</b> {utils.safe_escape(first_name)}",
+        f"• <b>Last Name:</b> {utils.safe_escape(last_name)}",
+        f"• <b>ID:</b> <code>{target_id}</code>",
+        f"• <b>Username:</b> {username}",
+        f"• <b>Profile:</b> <a href='tg://user?id={target_id}'>link</a>",
+        "",
+        "<b>Security Status</b>",
+        f"• <b>Globally Banned:</b> <code>{is_gbanned}</code>",
+        f"• <b>Locally Approved:</b> <code>{is_approved}</code>",
+        f"• <b>Immune:</b> <code>{is_immune}</code>"
+    ]
+
+    if user_rank:
+        lines.append(f"• <b>Bot Rank:</b> <code>{user_rank}</code>")
+
+    final_info = "\n".join(lines)
+    await utils.send_safe_reply(update, context, final_info)
 
 @bot_command("gban")
 async def gban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -946,7 +1013,7 @@ async def gbanstat_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     u_link = await utils.create_user_link(target_id, context)
     title = "Your Global Ban Status:" if target_id == user.id else "Global Ban Status:"
     if target_id == OWNER_ID:
-        msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> <i>Bot Owner</i>")
+        msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> <i>Master Owner</i>")
     elif await db.is_sudo(target_id):
         msg = (f"<b>{title}</b>\n<b>User:</b> {u_link} [<code>{target_id}</code>]\n\n<b>Status:</b> <i>Bot Sudo</i>")
     elif await db.is_support(target_id):

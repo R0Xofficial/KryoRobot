@@ -568,14 +568,14 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_rank = "Bot Support"
 
     lines = [
-        "<b>User Information</b>",
+        "<b>User Information:</b>",
         f"• <b>First Name:</b> {utils.safe_escape(first_name)}",
         f"• <b>Last Name:</b> {utils.safe_escape(last_name)}",
         f"• <b>ID:</b> <code>{target_id}</code>",
         f"• <b>Username:</b> {username}",
         f"• <b>Profile:</b> <a href='tg://user?id={target_id}'>link</a>",
         "",
-        "<b>User Status</b>",
+        "<b>User Status:</b>",
         f"• <b>Globally Banned:</b> <code>{is_gbanned}</code>",
         f"• <b>Immune:</b> <code>{is_immune}</code>"
     ]

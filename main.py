@@ -1663,6 +1663,14 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?")
         return
 
+    if await db.is_sudo(target_id) or await db.is_support(target_id) or is_admin or target_id == context.bot.id:
+        await utils.send_safe_reply(update, context, f"User cannot be approved if is already a group moderation!")
+        return
+
+    if await db.is_locally_approved(target_id):
+        await utils.send_safe_reply(update, context, f"This user is already approved!")
+        return
+
     await db.add_local_approval(chat.id, target_id, admin.id)
     
     try:

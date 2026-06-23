@@ -584,11 +584,8 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await utils.send_safe_reply(update, context, final_info)
         return
 
-    if await db.get_gban(target_id):
-        lines.append(f"• <b>Globally Banned:</b> <code>{is_gbanned}</code>")
-
-    if utils.is_immune(target_id):
-        lines.append(f"• <b>Immune:</b> <code>{is_immune}</code>")
+    lines.append(f"• <b>Globally Banned:</b> <code>{is_gbanned}</code>")
+    lines.append(f"• <b>Immune:</b> <code>{is_immune}</code>")
 
     if chat.type != ChatType.PRIVATE:
         is_approved = "Yes" if await db.is_locally_approved(chat.id, target_id) else "No"

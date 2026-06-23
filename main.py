@@ -368,7 +368,7 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         await utils.send_safe_reply(
             update, context, 
-            "Click the button below to see the available commands in our private chat.",
+            "Click the button below to see the available commands.",
             reply_markup=keyboard
         )
         return
@@ -389,7 +389,7 @@ async def send_main_help_menu(message_obj, user, context, is_edit=False, query=N
     reply_markup = InlineKeyboardMarkup(keyboard)
     user_name = utils.safe_escape(user.first_name)
     
-    text = (f"<b>📚 Bot Help Menu</b>\n\n"
+    text = (f"<b>Bot Help Menu</b>\n\n"
             f"Hello {user_name}! Choose a category below to see commands available for you.")
 
     if is_edit and query:

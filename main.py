@@ -432,8 +432,8 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Request ban removal.\n"
             "• <code>/gstat &lt;target&gt;</code> - Check target's ban details.\n"
             "• <code>/stats</code> - View database statistics.\n"
-            "• <code>/approve &lt;target&gt;</code> - Grant local immunity in this chat.\n"
-            "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity in this chat.\n"
+            "• <code>/approve &lt;target&gt;</code> - Grant local immunity in chat.\n"
+            "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity in chat.\n"
             + footer
         ),
         "h_sudo": (
@@ -443,8 +443,8 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Execute immediate ban removal.\n"
             "• <code>/gstat &lt;target&gt;</code> - Check target's ban details.\n"
             "• <code>/stats</code> - View database statistics.\n"
-            "• <code>/approve &lt;target&gt;</code> - Grant local immunity in this chat.\n"
-            "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity in this chat.\n"
+            "• <code>/approve &lt;target&gt;</code> - Grant local immunity in chat.\n"
+            "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity in chat.\n"
             "• <code>/sudolist</code> - Show all bot sudo administrators.\n"
             "• <code>/supportlist</code> - Show all bot support members.\n"
             "• <code>/leave</code> - Force the bot to leave current chat.\n"
@@ -461,7 +461,7 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "• <code>/restore</code> - Replace database with a backup file.\n"
             "• <code>/update</code> - Pull latest code from Git and restart.\n"
             "• <code>/restart</code> - Manually reboot the bot process.\n"
-            "• <code>/importbans</code> - Mass import global bans from Rose file."
+            "• <code>/importbans</code> - Import global bans from json file."
             + footer
         )
     }

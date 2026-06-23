@@ -580,8 +580,7 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     lines = [
         "<b>User Information:</b>",
-        f"• <b>First Name:</b> {utils.safe_escape(first_name)}",
-        f"• <b>Last Name:</b> {utils.safe_escape(last_name)}",
+        f"• <b>Full Name:</b> {utils.safe_escape(first_name)} {utils.safe_escape(last_name)}",
         f"• <b>ID:</b> <code>{target_id}</code>",
         f"• <b>Username:</b> {username}",
         f"• <b>Profile:</b> <a href='tg://user?id={target_id}'>link</a>",

@@ -568,9 +568,9 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_rank = "Support"
 
     group_rank = None
-    if chat_member.status == ChatMemberStatus.OWNER
+    if chat_member.status == ChatMemberStatus.OWNER:
         group_rank = "Owner"
-    elif chat_member.status == ChatMemberStatus.ADMINISTRATOR
+    elif chat_member.status == ChatMemberStatus.ADMINISTRATOR:
         group_rank = "Admin"
 
     lines = [

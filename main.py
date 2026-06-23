@@ -568,14 +568,16 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_rank = "Support"
 
     group_rank = None
-    chat_member = await chat.get_member(target_id)
-    if chat_member.status == ChatMemberStatus.OWNER:
-        group_rank = "Owner"
-    elif chat_member.status == ChatMemberStatus.ADMINISTRATOR:
-        group_rank = "Admin"
-    elif chat_member.status == ChatMemberStatus.MEMBER:
-        group_rank = "Member"
-
+    try:
+        chat_member = await chat.get_member(target_id)
+        if chat_member.status == ChatMemberStatus.OWNER:
+            group_rank = "Owner"
+        elif chat_member.status == ChatMemberStatus.ADMINISTRATOR:
+            group_rank = "Admin"
+        elif chat_member.status == ChatMemberStatus.MEMBER:
+            group_rank = "Member"
+    except: pass
+    
     lines = [
         "<b>User Information:</b>",
         f"• <b>First Name:</b> {utils.safe_escape(first_name)}",

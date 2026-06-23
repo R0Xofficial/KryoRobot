@@ -573,6 +573,8 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         group_rank = "Owner"
     elif chat_member.status == ChatMemberStatus.ADMINISTRATOR:
         group_rank = "Admin"
+    elif chat_member.status == ChatMemberStatus.MEMBER:
+        group_rank = "Member"
 
     lines = [
         "<b>User Information:</b>",

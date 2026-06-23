@@ -447,8 +447,7 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity in this chat.\n"
             "• <code>/sudolist</code> - Show all bot sudo administrators.\n"
             "• <code>/supportlist</code> - Show all bot support members.\n"
-            "• <code>/leave</code> - Force the bot to leave current chat.\n\n"
-            "<i>More commands in Support page.</i>"
+            "• <code>/leave</code> - Force the bot to leave current chat.\n"
             + footer
         ),
         "h_owner": (

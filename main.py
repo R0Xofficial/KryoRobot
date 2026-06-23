@@ -563,9 +563,9 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if target_id == OWNER_ID:
         user_rank = "Master Owner"
     elif await db.is_sudo(target_id):
-        user_rank = "Bot Sudo"
+        user_rank = "Sudo"
     elif await db.is_support(target_id):
-        user_rank = "Bot Support"
+        user_rank = "Support"
 
     lines = [
         "<b>User Information:</b>",
@@ -576,16 +576,23 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"• <b>Profile:</b> <a href='tg://user?id={target_id}'>link</a>",
         "",
         "<b>User Status:</b>",
-        f"• <b>Globally Banned:</b> <code>{is_gbanned}</code>",
-        f"• <b>Immune:</b> <code>{is_immune}</code>"
     ]
+
+    if user_rank:
+        lines.append(f"• <b>Bot Rank:</b> <i>{user_rank}</i>")
+        final_info = "\n".join(lines)
+        await utils.send_safe_reply(update, context, final_info)
+        return
+
+    if await db.get_gban(target_id):
+        lines.append(f"• <b>Globally Banned:</b> <code>{is_gbanned}</code>")
+
+    if utils.is_immune(target_id):
+        lines.append(f"• <b>Immune:</b> <code>{is_immune}</code>")
 
     if chat.type != ChatType.PRIVATE:
         is_approved = "Yes" if await db.is_locally_approved(chat.id, target_id) else "No"
         lines.append(f"• <b>Approved:</b> <code>{is_approved}</code>")
-
-    if user_rank:
-        lines.append(f"• <b>Bot Rank:</b> <i>{user_rank}</i>")
 
     final_info = "\n".join(lines)
     await utils.send_safe_reply(update, context, final_info)

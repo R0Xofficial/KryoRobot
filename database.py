@@ -222,3 +222,8 @@ async def is_locally_approved(chat_id, user_id):
     res = await db_query("SELECT 1 FROM local_approvals WHERE chat_id = ? AND user_id = ?", 
                          (int(chat_id), int(user_id)), fetch="one")
     return res is not None
+
+async def get_all_local_approvals(chat_id):
+    """Returns a list of all user IDs approved in a specific chat."""
+    res = await db_query("SELECT user_id FROM local_approvals WHERE chat_id = ?", (int(chat_id),), fetch="all")
+    return [row[0] for row in res]

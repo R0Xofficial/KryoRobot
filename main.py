@@ -384,7 +384,7 @@ async def send_main_help_menu(message_obj, user, context, is_edit=False, query=N
     keyboard = [[InlineKeyboardButton("User Commands", callback_data="h_user")]]
     if is_support or is_sudo: keyboard.append([InlineKeyboardButton("Support Commands", callback_data="h_support")])
     if is_sudo: keyboard.append([InlineKeyboardButton("Sudo Commands", callback_data="h_sudo")])
-    if is_owner: keyboard.append([InlineKeyboardButton("Master Commands", callback_data="h_owner")])
+    if is_owner: keyboard.append([InlineKeyboardButton("Owner Commands", callback_data="h_owner")])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     user_name = utils.safe_escape(user.first_name)
@@ -451,7 +451,7 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             + footer
         ),
         "h_owner": (
-            "<b>Master Owner Commands</b>\n\n"
+            "<b>Owner Commands</b>\n\n"
             "• <code>/addsudo &lt;target&gt;</code> - Grant Sudo privileges.\n"
             "• <code>/delsudo &lt;target&gt;</code> - Revoke Sudo privileges.\n"
             "• <code>/addsupport &lt;target&gt;</code> - Grant Support privileges.\n"
@@ -483,7 +483,7 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
         keyboard = [[InlineKeyboardButton("User Commands", callback_data="h_user")]]
         if is_support or is_sudo: keyboard.append([InlineKeyboardButton("Support Commands", callback_data="h_support")])
         if is_sudo: keyboard.append([InlineKeyboardButton("Sudo Commands", callback_data="h_sudo")])
-        if is_owner: keyboard.append([InlineKeyboardButton("Master Commands", callback_data="h_owner")])
+        if is_owner: keyboard.append([InlineKeyboardButton("Owner Commands", callback_data="h_owner")])
         
         user_name = utils.safe_escape(query.from_user.first_name)
         main_text = (f"<b>Bot Help Menu</b>\n\n"
@@ -1064,7 +1064,7 @@ async def addsudo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?")
         return
     if target_id == OWNER_ID:
-        await utils.send_safe_reply(update, context, "You are already the Master Owner.")
+        await utils.send_safe_reply(update, context, "You are already the Owner.")
         return
 
     if utils.is_immune(target_id):
@@ -1461,7 +1461,7 @@ async def addsupport_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?")
         return
     if target_id == OWNER_ID:
-        await utils.send_safe_reply(update, context, "You are already the Master Owner.")
+        await utils.send_safe_reply(update, context, "You are already the Owner.")
         return
 
     if utils.is_immune(target_id):

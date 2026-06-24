@@ -382,7 +382,7 @@ async def send_main_help_menu(message_obj, user, context, is_edit=False, query=N
     is_owner = (user.id == OWNER_ID)
 
     keyboard = [[InlineKeyboardButton("User Commands", callback_data="h_user")]]
-    if is_support or is_sudo: keyboard.append([InlineKeyboardButton("Support Commands", callback_data="h_support")])
+    if is_support: keyboard.append([InlineKeyboardButton("Support Commands", callback_data="h_support")])
     if is_sudo: keyboard.append([InlineKeyboardButton("Sudo Commands", callback_data="h_sudo")])
     if is_owner: keyboard.append([InlineKeyboardButton("Owner Commands", callback_data="h_owner")])
 
@@ -452,6 +452,16 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
         ),
         "h_owner": (
             "<b>Owner Commands</b>\n\n"
+            "• <code>/gban &lt;target&gt; &lt;reason&gt;</code> - Execute immediate global ban.\n"
+            "• <code>/dgban &lt;target&gt; &lt;reason&gt;</code> - Immediate delete & global ban.\n"
+            "• <code>/ungban &lt;target&gt; &lt;reason&gt;</code> - Execute immediate ban removal.\n"
+            "• <code>/gstat &lt;target&gt;</code> - Check target's ban details.\n"
+            "• <code>/stats</code> - View database statistics.\n"
+            "• <code>/approve &lt;target&gt;</code> - Grant local immunity in chat.\n"
+            "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity in chat.\n"
+            "• <code>/sudolist</code> - Show all bot sudo administrators.\n"
+            "• <code>/supportlist</code> - Show all bot support members.\n"
+            "• <code>/leave</code> - Force the bot to leave current chat.\n"
             "• <code>/addsudo &lt;target&gt;</code> - Grant Sudo privileges.\n"
             "• <code>/delsudo &lt;target&gt;</code> - Revoke Sudo privileges.\n"
             "• <code>/addsupport &lt;target&gt;</code> - Grant Support privileges.\n"
@@ -481,7 +491,7 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
         is_owner = (user_id == OWNER_ID)
         
         keyboard = [[InlineKeyboardButton("User Commands", callback_data="h_user")]]
-        if is_support or is_sudo: keyboard.append([InlineKeyboardButton("Support Commands", callback_data="h_support")])
+        if is_support: keyboard.append([InlineKeyboardButton("Support Commands", callback_data="h_support")])
         if is_sudo: keyboard.append([InlineKeyboardButton("Sudo Commands", callback_data="h_sudo")])
         if is_owner: keyboard.append([InlineKeyboardButton("Owner Commands", callback_data="h_owner")])
         

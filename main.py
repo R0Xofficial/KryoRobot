@@ -418,7 +418,7 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "• <code>/ping</code> - Check bot's response time.\n"
             "• <code>/uptime</code> - See how long the bot is online.\n"
             "• <code>/gstat</code> - Check your own global ban status.\n\n"
-            "<b>Group Moderation Command</b>\n"
+            "<b>Group Moderation Commands</b>\n"
             "• <code>/gbans &lt;on/off/yes/no&gt;</code> - Toggle protection here.\n"
             "• <code>/approve &lt;target&gt;</code> - Give user local immunity.\n"
             "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity.\n"

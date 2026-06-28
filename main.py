@@ -1641,14 +1641,6 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if chat.type == ChatType.PRIVATE:
         return
 
-    chat_member = await chat.get_member(admin.id)
-    is_admin = chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
-    is_sudo = await db.is_sudo(admin.id)
-    is_support = await db.is_support(admin.id)
-    if not (is_admin or is_sudo or is_support):
-        await utils.send_safe_reply(update, context, f"Only administrators of this group have permissions for this command!")
-        return
-
     target_id = None
     if update.message.reply_to_message and not update.message.reply_to_message.forum_topic_created:
         target_id = update.message.reply_to_message.from_user.id
@@ -1657,6 +1649,14 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if err:
             await utils.send_safe_reply(update, context, err)
             return
+
+    chat_member = await chat.get_member(target_id)
+    is_admin = chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
+    is_sudo = await db.is_sudo(admin.id)
+    is_support = await db.is_support(admin.id)
+    if not (is_admin or is_sudo or is_support):
+        await utils.send_safe_reply(update, context, f"Only administrators of this group have permissions for this command!")
+        return
 
     if utils.is_immune(target_id):
         await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
@@ -1692,19 +1692,19 @@ async def unapprove_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if chat.type == ChatType.PRIVATE:
         return
 
-    chat_member = await chat.get_member(admin.id)
+    target_id = None
+    if update.message.reply_to_message and not update.message.reply_to_message.forum_topic_created:
+        target_id = update.message.reply_to_message.from_user.id
+    elif context.args:
+        target_id, err = await utils.resolve_id(update, context, context.args[0])
+
+    chat_member = await chat.get_member(target_id)
     is_admin = chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
     is_sudo = await db.is_sudo(admin.id)
     is_support = await db.is_support(admin.id)
     if not (is_admin or is_sudo or is_support):
         await utils.send_safe_reply(update, context, f"Only administrators of this group have permissions for this command!")
         return
-
-    target_id = None
-    if update.message.reply_to_message and not update.message.reply_to_message.forum_topic_created:
-        target_id = update.message.reply_to_message.from_user.id
-    elif context.args:
-        target_id, err = await utils.resolve_id(update, context, context.args[0])
 
     if utils.is_immune(target_id):
         await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")

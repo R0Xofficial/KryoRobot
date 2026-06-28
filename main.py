@@ -1682,7 +1682,7 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pass
 
     user_link = await utils.create_user_link(target_id, context)
-    await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] has been <b>approved</b> in this chat. From now on, the user has immunity from global bans.")
+    await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] has been <b>approved</b> in this chat. From now on, the user has immunity from global ban.")
 
 
 @bot_command("unapprove")
@@ -1716,7 +1716,7 @@ async def unapprove_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if await db.remove_local_approval(chat.id, target_id):
         user_link = await utils.create_user_link(target_id, context)
-        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>no longer approved</b> in this chat. From now on, the user does not have immunity from global bans.")
+        await utils.send_safe_reply(update, context, f"User {user_link} [<code>{target_id}</code>] is <b>no longer approved</b> in this chat. From now on, the user does not have immunity from global ban.")
     else:
         await update.message.reply_text("This user was not approved in this chat.")
 

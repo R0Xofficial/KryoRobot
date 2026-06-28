@@ -1643,8 +1643,8 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     chat_member = await chat.get_member(admin.id)
     is_admin = chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
-    is_sudo = await db.is_sudo(user.id)
-    is_support = await db.is_support(user.id)
+    is_sudo = await db.is_sudo(admin.id)
+    is_support = await db.is_support(admin.id)
     if not (is_admin or is_sudo or is_support):
         await utils.send_safe_reply(update, context, f"Only administrators of this group have permissions for this command!")
         return
@@ -1694,8 +1694,8 @@ async def unapprove_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     chat_member = await chat.get_member(admin.id)
     is_admin = chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
-    is_sudo = await db.is_sudo(user.id)
-    is_support = await db.is_support(user.id)
+    is_sudo = await db.is_sudo(admin.id)
+    is_support = await db.is_support(admin.id)
     if not (is_admin or is_sudo or is_support):
         await utils.send_safe_reply(update, context, f"Only administrators of this group have permissions for this command!")
         return

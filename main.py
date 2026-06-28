@@ -1670,7 +1670,7 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await utils.send_safe_reply(update, context, f"Why should I approve myself?")
         return
 
-    if await db.is_locally_approved(target_id):
+    if await db.is_locally_approved(chat.id, target_id):
         await utils.send_safe_reply(update, context, f"This user is already approved!")
         return
 

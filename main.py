@@ -576,6 +576,12 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             group_rank = "Admin"
         elif chat_member.status == ChatMemberStatus.MEMBER:
             group_rank = "Member"
+        elif chat_member.status == ChatMemberStatus.RESTRICTED:
+            group_rank = "Restricted"
+        elif chat_member.status == ChatMemberStatus.BANNED:
+            group_rank = "Banned"
+        else:
+            group_rank = "Not in chat"
     except: pass
     
     lines = [

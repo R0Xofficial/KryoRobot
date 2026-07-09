@@ -585,7 +585,7 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except: pass
     
     lines = [
-        "<b>User Information:</b>",
+        "<b>User Info:</b>",
         f"• <b>Full Name:</b> {utils.safe_escape(first_name)} {utils.safe_escape(last_name)}",
         f"• <b>ID:</b> <code>{target_id}</code>",
         f"• <b>Username:</b> {username}",
@@ -595,10 +595,10 @@ async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
 
     if group_rank and chat.type != ChatType.PRIVATE:
-        lines.append(f"• <b>Group Rank:</b> <code>{group_rank}</code>")
+        lines.append(f"• <b>Status:</b> <code>{group_rank}</code>")
 
     if user_rank:
-        lines.append(f"• <b>Bot Rank:</b> <code>{user_rank}</code>")
+        lines.append(f"• <b>Bot Role:</b> <code>{user_rank}</code>")
         final_info = "\n".join(lines)
         await utils.send_safe_reply(update, context, final_info)
         return

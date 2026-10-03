@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: kryo_robot
+    container_name: kryorobot
     restart: unless-stopped
     volumes:
       - ./bot_data:/app/data

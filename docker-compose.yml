@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  kryo-robot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kryo_robot
+    restart: unless-stopped
+    volumes:
+      - ./bot_data:/app/data
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    environment:
+      - TZ=Europe/Warsaw
+      - BOT_TOKEN
+      - OWNER_ID
+      - LOG_CHAT_ID
+      - APPEAL_CHAT_USERNAME
+      - HEARTBEAT_ENABLED
+      - HEARTBEAT_CHAT_ID
+      - HEARTBEAT_INTERVAL

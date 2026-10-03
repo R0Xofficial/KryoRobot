@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.git
+.gitignore
+*.db
+*.db-journal
+import_temp.json
+traceback_*.txt

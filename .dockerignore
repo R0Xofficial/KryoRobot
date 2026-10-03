@@ -6,5 +6,7 @@ __pycache__
 .gitignore
 *.db
 *.db-journal
+bot_data/
+data/
 import_temp.json
 traceback_*.txt

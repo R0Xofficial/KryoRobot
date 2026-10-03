@@ -457,7 +457,7 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "• <code>/addsupport &lt;target&gt;</code> - Grant Support privileges.\n"
             "• <code>/delsupport &lt;target&gt;</code> - Revoke Support privileges.\n"
             "• <code>/cleanup</code> - Clean inactive groups from database.\n"
-            "• <code>/databackup</code> - Get the current database file.\n"
+            "• <code>/backup</code> - Get the current database file.\n"
             "• <code>/restore</code> - Replace database with a backup file.\n"
             "• <code>/update</code> - Pull latest code from Git and restart.\n"
             "• <code>/restart</code> - Manually reboot the bot process.\n"

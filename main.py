@@ -1640,6 +1640,14 @@ async def heartbeat_job(context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error(f"Heartbeat failed: {e}")
 
+async def _safe_member_status(chat, user_id):
+    """Zwraca status użytkownika w czacie albo None, jeśli go tam nie ma / ID jest nieprawidłowe."""
+    try:
+        member = await chat.get_member(user_id)
+        return member.status
+    except BadRequest:
+        return None
+
 @bot_command("approve")
 async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     admin = update.effective_user
@@ -1656,29 +1664,32 @@ async def approve_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await utils.send_safe_reply(update, context, err)
             return
 
-    chat_member = await chat.get_member(target_id)
-    is_admin = chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
+    if not target_id:
+        await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?")
+        return
+
+    admin_status = await _safe_member_status(chat, admin.id)
+    caller_is_admin = admin_status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
     is_sudo = await db.is_sudo(admin.id)
     is_support = await db.is_support(admin.id)
+
+    if not (caller_is_admin or is_sudo or is_support):
+        await utils.send_safe_reply(update, context, f"Only administrators of this group have permissions for this command!")
+        return
 
     if utils.is_immune(target_id):
         await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
         return
 
-    if not target_id:
-        await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?")
-        return
+    target_status = await _safe_member_status(chat, target_id)
+    target_is_admin = target_status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
 
-    if await db.is_sudo(target_id) or await db.is_support(target_id) or is_admin or target_id == context.bot.id:
+    if await db.is_sudo(target_id) or await db.is_support(target_id) or target_is_admin or target_id == context.bot.id:
         await utils.send_safe_reply(update, context, f"User cannot be approved if is already a group moderation!")
         return
 
     if await db.is_locally_approved(chat.id, target_id):
         await utils.send_safe_reply(update, context, f"This user is already approved!")
-        return
-
-    if not (is_admin or is_sudo or is_support):
-        await utils.send_safe_reply(update, context, f"Only administrators of this group have permissions for this command!")
         return
 
     await db.add_local_approval(chat.id, target_id, admin.id)
@@ -1704,22 +1715,25 @@ async def unapprove_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         target_id = update.message.reply_to_message.from_user.id
     elif context.args:
         target_id, err = await utils.resolve_id(update, context, context.args[0])
+        if err:
+            await utils.send_safe_reply(update, context, err)
+            return
 
-    chat_member = await chat.get_member(target_id)
-    is_admin = chat_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
-    is_sudo = await db.is_sudo(admin.id)
-    is_support = await db.is_support(admin.id)
-
-    if utils.is_immune(target_id):
-        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
-        return
-        
     if not target_id:
         await utils.send_safe_reply(update, context, "Who is the target of the command? The stars in the sky?")
         return
 
-    if not (is_admin or is_sudo or is_support):
+    admin_status = await _safe_member_status(chat, admin.id)
+    caller_is_admin = admin_status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
+    is_sudo = await db.is_sudo(admin.id)
+    is_support = await db.is_support(admin.id)
+
+    if not (caller_is_admin or is_sudo or is_support):
         await utils.send_safe_reply(update, context, f"Only administrators of this group have permissions for this command!")
+        return
+
+    if utils.is_immune(target_id):
+        await utils.send_safe_reply(update, context, f"This ID [<code>{target_id}</code>] is on the exception list. You cannot perform any actions on it.")
         return
 
     if await db.remove_local_approval(chat.id, target_id):

@@ -24,6 +24,8 @@ import utils
 from handlers import bot_command, command_router
 
 BOT_START_TIME = datetime.now(timezone.utc)
+SPEEDTEST_URL = "https://speed.cloudflare.com"
+SPEEDTEST_RUNNING = False
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -179,6 +181,67 @@ async def support_callback_handler(update: Update, context: ContextTypes.DEFAULT
 
     await db.delete_support_request(req_id)
     await query.answer("Action processed.")
+
+async def run_speedtest(base_url: str = SPEEDTEST_URL) -> tuple[float, float, float]:
+    """Measures ping (ms), download (Mbps) and upload (Mbps) of the server hosting the bot."""
+    async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
+        # --- PING (median of 5 tiny requests on a warm connection) ---
+        await client.get(f"{base_url}/__down?bytes=0")
+        pings = []
+        for _ in range(5):
+            t = time.perf_counter()
+            await client.get(f"{base_url}/__down?bytes=0")
+            pings.append((time.perf_counter() - t) * 1000)
+        ping = statistics.median(pings)
+
+        # --- DOWNLOAD (4 parallel streams x 25 MB) ---
+        async def download_one() -> int:
+            total = 0
+            async with client.stream("GET", f"{base_url}/__down?bytes=25000000") as r:
+                r.raise_for_status()
+                async for chunk in r.aiter_bytes():
+                    total += len(chunk)
+            return total
+
+        t = time.perf_counter()
+        sizes = await asyncio.gather(*[download_one() for _ in range(4)])
+        download = sum(sizes) * 8 / (time.perf_counter() - t) / 1_000_000
+
+        # --- UPLOAD (4 parallel POSTs x 10 MB) ---
+        payload = bytes(10_000_000)
+
+        async def upload_one() -> int:
+            r = await client.post(f"{base_url}/__up", content=payload)
+            r.raise_for_status()
+            return len(payload)
+
+        t = time.perf_counter()
+        sizes = await asyncio.gather(*[upload_one() for _ in range(4)])
+        upload = sum(sizes) * 8 / (time.perf_counter() - t) / 1_000_000
+
+    return ping, download, upload
+
+async def _speedtest_job(message):
+    """Runs the speedtest in the background and edits the message with the result."""
+    global SPEEDTEST_RUNNING
+    try:
+        ping, download, upload = await run_speedtest()
+        text = (
+            f"<b>Speedtest</b>\n\n"
+            f"• <b>Ping:</b> <code>{ping:.1f} ms</code>\n"
+            f"• <b>Download:</b> <code>{download:.2f} Mbps</code>\n"
+            f"• <b>Upload:</b> <code>{upload:.2f} Mbps</code>"
+        )
+    except Exception as e:
+        logger.error(f"Speedtest failed: {e}")
+        text = f"<b>Speedtest failed:</b> <code>{utils.safe_escape(str(e) or type(e).__name__)}</code>"
+    finally:
+        SPEEDTEST_RUNNING = False
+
+    try:
+        await message.edit_text(text, parse_mode=ParseMode.HTML)
+    except Exception as e:
+        logger.error(f"Speedtest: could not edit message: {e}")
 
 # --- LOGGERS ---
 async def passive_data_logger(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -512,76 +575,25 @@ async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode=ParseMode.HTML
     )
 
-SPEEDTEST_URL = "https://speed.cloudflare.com"
-SPEEDTEST_LOCK = asyncio.Lock()
-
-async def run_speedtest(base_url: str = SPEEDTEST_URL) -> tuple[float, float, float]:
-    """Measures ping (ms), download (Mbps) and upload (Mbps) of the server hosting the bot."""
-    async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
-        # --- PING (median of 5 tiny requests on a warm connection) ---
-        await client.get(f"{base_url}/__down?bytes=0")
-        pings = []
-        for _ in range(5):
-            t = time.perf_counter()
-            await client.get(f"{base_url}/__down?bytes=0")
-            pings.append((time.perf_counter() - t) * 1000)
-        ping = statistics.median(pings)
-
-        # --- DOWNLOAD (4 parallel streams x 25 MB) ---
-        async def download_one() -> int:
-            total = 0
-            async with client.stream("GET", f"{base_url}/__down?bytes=25000000") as r:
-                r.raise_for_status()
-                async for chunk in r.aiter_bytes():
-                    total += len(chunk)
-            return total
-
-        t = time.perf_counter()
-        sizes = await asyncio.gather(*[download_one() for _ in range(4)])
-        download = sum(sizes) * 8 / (time.perf_counter() - t) / 1_000_000
-
-        # --- UPLOAD (4 parallel POSTs x 10 MB) ---
-        payload = bytes(10_000_000)
-
-        async def upload_one() -> int:
-            r = await client.post(f"{base_url}/__up", content=payload)
-            r.raise_for_status()
-            return len(payload)
-
-        t = time.perf_counter()
-        sizes = await asyncio.gather(*[upload_one() for _ in range(4)])
-        upload = sum(sizes) * 8 / (time.perf_counter() - t) / 1_000_000
-
-    return ping, download, upload
-
 @bot_command("speedtest")
 async def speedtest_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global SPEEDTEST_RUNNING
     if update.effective_user.id != OWNER_ID:
         return
 
-    if SPEEDTEST_LOCK.locked():
+    if SPEEDTEST_RUNNING:
         await utils.send_safe_reply(update, context, "A speedtest is already running, please wait.")
         return
 
-    async with SPEEDTEST_LOCK:
+    SPEEDTEST_RUNNING = True
+    try:
         message = await utils.send_safe_reply(update, context, "Running speedtest...")
-        try:
-            ping, download, upload = await run_speedtest()
-        except Exception as e:
-            logger.error(f"Speedtest failed: {e}")
-            await message.edit_text(
-                f"<b>Speedtest failed:</b> <code>{utils.safe_escape(str(e) or type(e).__name__)}</code>",
-                parse_mode=ParseMode.HTML
-            )
-            return
+    except Exception:
+        SPEEDTEST_RUNNING = False
+        raise
 
-        await message.edit_text(
-            f"<b>Speedtest</b>\n\n"
-            f"• <b>Ping:</b> <code>{ping:.1f} ms</code>\n"
-            f"• <b>Download:</b> <code>{download:.2f} Mbps</code>\n"
-            f"• <b>Upload:</b> <code>{upload:.2f} Mbps</code>",
-            parse_mode=ParseMode.HTML
-        )
+    # Run in background so the bot keeps processing other updates meanwhile
+    context.application.create_task(_speedtest_job(message))
 
 async def get_readable_time(seconds: int) -> str:
     count = 0

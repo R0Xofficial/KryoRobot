@@ -487,7 +487,7 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "• <code>/gbans &lt;on/off/yes/no&gt;</code> - Toggle protection here.\n"
             "• <code>/approve &lt;target&gt;</code> - Give user local immunity.\n"
             "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity.\n"
-            "• <code>/approvals</code> - List all locally immune users.\n"
+            "• <code>/approvals</code> - List all locally immune users."
             + footer
         ),
         "h_support": (
@@ -498,7 +498,7 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "• <code>/gstat &lt;target&gt;</code> - Check target's ban details.\n"
             "• <code>/stats</code> - View database statistics.\n"
             "• <code>/approve &lt;target&gt;</code> - Grant local immunity in chat.\n"
-            "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity in chat.\n"
+            "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity in chat."
             + footer
         ),
         "h_sudo": (
@@ -512,7 +512,7 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "• <code>/unapprove &lt;target&gt;</code> - Remove local immunity in chat.\n"
             "• <code>/sudolist</code> - Show all bot sudo administrators.\n"
             "• <code>/supportlist</code> - Show all bot support members.\n"
-            "• <code>/leave</code> - Force the bot to leave current chat.\n"
+            "• <code>/leave</code> - Force the bot to leave current chat."
             + footer
         ),
         "h_owner": (
@@ -527,7 +527,7 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "• <code>/update</code> - Pull latest code from Git and restart.\n"
             "• <code>/restart</code> - Manually reboot the bot process.\n"
             "• <code>/importbans</code> - Import global bans from json file.\n"
-            "• <code>/speedtest</code> - Test the bot server's ping, download and upload.\n"
+            "• <code>/speedtest</code> - Test the bot server's ping, download and upload."
             + footer
         )
     }

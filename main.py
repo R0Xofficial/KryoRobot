@@ -9,6 +9,8 @@ import subprocess
 import aiosqlite
 import telegram
 import json
+import statistics
+import httpx
 from telegram.error import Forbidden, BadRequest, RetryAfter, TimedOut
 from datetime import datetime, timezone
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, LinkPreviewOptions
@@ -448,6 +450,7 @@ async def help_callback_handler(update: Update, context: ContextTypes.DEFAULT_TY
             "• <code>/sudolist</code> - Show all bot sudo administrators.\n"
             "• <code>/supportlist</code> - Show all bot support members.\n"
             "• <code>/leave</code> - Force the bot to leave current chat.\n"
+            "• <code>/speedtest</code> - Test the bot server's ping, download and upload.\n"
             + footer
         ),
         "h_owner": (
@@ -508,6 +511,77 @@ async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"<b>Latency:</b> <code>{latency} ms</code>",
         parse_mode=ParseMode.HTML
     )
+
+SPEEDTEST_URL = "https://speed.cloudflare.com"
+SPEEDTEST_LOCK = asyncio.Lock()
+
+async def run_speedtest(base_url: str = SPEEDTEST_URL) -> tuple[float, float, float]:
+    """Measures ping (ms), download (Mbps) and upload (Mbps) of the server hosting the bot."""
+    async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
+        # --- PING (median of 5 tiny requests on a warm connection) ---
+        await client.get(f"{base_url}/__down?bytes=0")
+        pings = []
+        for _ in range(5):
+            t = time.perf_counter()
+            await client.get(f"{base_url}/__down?bytes=0")
+            pings.append((time.perf_counter() - t) * 1000)
+        ping = statistics.median(pings)
+
+        # --- DOWNLOAD (4 parallel streams x 25 MB) ---
+        async def download_one() -> int:
+            total = 0
+            async with client.stream("GET", f"{base_url}/__down?bytes=25000000") as r:
+                r.raise_for_status()
+                async for chunk in r.aiter_bytes():
+                    total += len(chunk)
+            return total
+
+        t = time.perf_counter()
+        sizes = await asyncio.gather(*[download_one() for _ in range(4)])
+        download = sum(sizes) * 8 / (time.perf_counter() - t) / 1_000_000
+
+        # --- UPLOAD (4 parallel POSTs x 10 MB) ---
+        payload = bytes(10_000_000)
+
+        async def upload_one() -> int:
+            r = await client.post(f"{base_url}/__up", content=payload)
+            r.raise_for_status()
+            return len(payload)
+
+        t = time.perf_counter()
+        sizes = await asyncio.gather(*[upload_one() for _ in range(4)])
+        upload = sum(sizes) * 8 / (time.perf_counter() - t) / 1_000_000
+
+    return ping, download, upload
+
+@bot_command("speedtest")
+async def speedtest_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await db.is_sudo(update.effective_user.id):
+        return
+
+    if SPEEDTEST_LOCK.locked():
+        await utils.send_safe_reply(update, context, "A speedtest is already running, please wait.")
+        return
+
+    async with SPEEDTEST_LOCK:
+        message = await utils.send_safe_reply(update, context, "Running speedtest...")
+        try:
+            ping, download, upload = await run_speedtest()
+        except Exception as e:
+            logger.error(f"Speedtest failed: {e}")
+            await message.edit_text(
+                f"<b>Speedtest failed:</b> <code>{utils.safe_escape(str(e) or type(e).__name__)}</code>",
+                parse_mode=ParseMode.HTML
+            )
+            return
+
+        await message.edit_text(
+            f"<b>Speedtest</b>\n\n"
+            f"• <b>Ping:</b> <code>{ping:.1f} ms</code>\n"
+            f"• <b>Download:</b> <code>{download:.2f} Mbps</code>\n"
+            f"• <b>Upload:</b> <code>{upload:.2f} Mbps</code>",
+            parse_mode=ParseMode.HTML
+        )
 
 async def get_readable_time(seconds: int) -> str:
     count = 0
